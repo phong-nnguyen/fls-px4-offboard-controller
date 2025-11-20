@@ -1340,7 +1340,7 @@ if __name__ == "__main__":
     c.set_initial_yaw()
     c.set_battery_cells()
 
-    if not c.set_mode('HOLD'):
+    if not c.set_mode('Offboard'):
         pass
         # exit()
 
