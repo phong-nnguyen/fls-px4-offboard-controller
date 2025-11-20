@@ -106,7 +106,10 @@ class Controller:
         self.velocity_estimator = VelocityEstimator(filter_alpha=0.1)
 
     def connect(self):
-        self.master = mavutil.mavlink_connection(self.device, baud=self.baudrate)
+        if self.sim:
+            self.master = mavutil.mavlink_connection("udpin:127.0.0.1:14551")
+        else:
+            self.master = mavutil.mavlink_connection(self.device, baud=self.baudrate)
 
         self.logger.info("Waiting for heartbeat...")
         self.master.wait_heartbeat()
