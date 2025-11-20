@@ -106,10 +106,7 @@ class Controller:
         self.velocity_estimator = VelocityEstimator(filter_alpha=0.1)
 
     def connect(self):
-        if self.sim:
-            self.master = mavutil.mavlink_connection("udpin:127.0.0.1:14551")
-        else:
-            self.master = mavutil.mavlink_connection(self.device, baud=self.baudrate)
+        self.master = mavutil.mavlink_connection(self.device, baud=self.baudrate)
 
         self.logger.info("Waiting for heartbeat...")
         self.master.wait_heartbeat()
@@ -1156,6 +1153,7 @@ class Controller:
         while time.time() < timeout:
             msg = self.master.recv_match(type='ESTIMATOR_STATUS', blocking=True, timeout=1)
             if not msg:
+                self.logger.debug("No EKF status message found")
                 continue
 
             flags = msg.flags
