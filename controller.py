@@ -1172,9 +1172,9 @@ class Controller:
                 'const_pos_mode': bool(flags & (1 << 9)),
             }
 
-            self.logger.debug("EKF status report:")
+            self.logger.info("EKF status report:")
             for k, v in status.items():
-                self.logger.debug(f" - {k}: {'OK' if v else 'NOT OK'}")
+                self.logger.(f" - {k}: {'OK' if v else 'NOT OK'}")
 
             if status['attitude'] and status['velocity_horiz'] and (status['pos_horiz_abs'] or status['pos_horiz_rel']):
                 self.logger.info("EKF is healthy and position estimate is OK.")
