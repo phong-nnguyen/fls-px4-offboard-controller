@@ -1156,6 +1156,7 @@ class Controller:
         while time.time() < timeout:
             msg = self.master.recv_match(type='EKF_STATUS_REPORT', blocking=True, timeout=1)
             if not msg:
+                self.logger.debug("test")
                 continue
 
             flags = msg.flags
@@ -1172,6 +1173,7 @@ class Controller:
                 'const_pos_mode': bool(flags & (1 << 9)),
             }
 
+            self.logger.info("test2")
             self.logger.debug("EKF status report:")
             for k, v in status.items():
                 self.logger.debug(f" - {k}: {'OK' if v else 'NOT OK'}")
