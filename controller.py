@@ -1198,7 +1198,7 @@ class Controller:
         self.logger.info("Fetching current EKF sources...")
         posxy_src = self.wait_param("EK3_SRC1_POSXY")
         velxy_src = self.wait_param("EK3_SRC1_VELXY")
-        self.logger.info(f"EK3_SRC1_POSXY = {posxy_src}, EK3_SRC1_VELXY = {velxy_src}")
+        self.logger.info(f"EKF_SRC_POSXY = {posxy_src}, EKF_SRC_VELXY = {velxy_src}")
 
         while not self.check_ekf_status():
             self.logger.info("waiting for EK3 to converge...")
