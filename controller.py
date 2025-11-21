@@ -344,15 +344,20 @@ class Controller:
         mode_id = modes[mode]
 
         # Send mode change command
-        self.master.mav.command_long_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_CMD_DO_SET_MODE,
-            0,
+        self.master.mav.set_mode_send(
+            self.master.target.system,
             mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-            mode_id,
-            0, 0, 0, 0, 0
+            mode_id
         )
+        # self.master.mav.command_long_send(
+        #     self.master.target_system,
+        #     self.master.target_component,
+        #     mavutil.mavlink.MAV_CMD_DO_SET_MODE,
+        #     0,
+        #     mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
+        #     mode_id,
+        #     0, 0, 0, 0, 0
+        # )
 
         ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_DO_SET_MODE)
         heartbeat = self.master.wait_heartbeat()
