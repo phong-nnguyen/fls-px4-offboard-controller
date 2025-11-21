@@ -344,6 +344,8 @@ class Controller:
         # }
 
         modes = self.master.mode_mapping()
+        self.logger.info("Available modes:")
+        self.logger.info(str(modes))
 
         # if mode not in mode_mapping:
         #     self.logger.error(f"Unknown mode: {mode}")
