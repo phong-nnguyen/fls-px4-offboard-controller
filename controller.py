@@ -978,8 +978,6 @@ class Controller:
             0,  # rpy_rad[0],  # Roll angle
             0,  # rpy_rad[1],  # Pitch angle
             0,  # rpy_rad[2],  # Yaw angle
-            pose_covariance,  # Row-major representation of pose 6x6 cross-covariance matrix
-            1  # Estimate reset counter. Increment every time pose estimate jumps.
         )
 
     def send_velocity_estimate(self, vx, vy, vz, covariance=None):
