@@ -329,17 +329,19 @@ class Controller:
             return False
 
         # # Map the mode name to mode ID
-        mode_mapping = {
-            "Offboard": 6
-        }
+        # mode_mapping = {
+        #     "Offboard": 6
+        # }
 
-        # modes = self.master.mode_mapping()
+        modes = self.master.mode_mapping()
 
         # if mode not in mode_mapping:
         #     self.logger.error(f"Unknown mode: {mode}")
         #     return False
 
-        mode_id = mode_mapping[mode]
+        self.logger.info("Available modes: ")
+        self.logger.info(f"{modes}")
+        mode_id = modes[mode]
 
         # Send mode change command
         self.master.mav.command_long_send(
