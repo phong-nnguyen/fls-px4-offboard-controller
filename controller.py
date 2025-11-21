@@ -1362,7 +1362,7 @@ if __name__ == "__main__":
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
 
-    if not c.set_mode('Offboard'):
+    if not c.set_mode('OFFBOARD'):
         pass
         # exit()
 
