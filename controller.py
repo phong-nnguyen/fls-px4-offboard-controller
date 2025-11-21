@@ -329,27 +329,17 @@ class Controller:
             return False
 
         # # Map the mode name to mode ID
-        # mode_mapping = {
-        #     'STABILIZE': 0,
-        #     'ACRO': 1,
-        #     'ALT_HOLD': 2,
-        #     'AUTO': 3,
-        #     'GUIDED': 4,
-        #     'LOITER': 5,
-        #     'RTL': 6,
-        #     'CIRCLE': 7,
-        #     'POSITION': 8,
-        #     'LAND': 9,
-        #     'GUIDED_NOGPS': 20,
-        # }
+        mode_mapping = {
+            "Offboard": 6
+        }
 
-        modes = self.master.mode_mapping()
+        # modes = self.master.mode_mapping()
 
         # if mode not in mode_mapping:
         #     self.logger.error(f"Unknown mode: {mode}")
         #     return False
 
-        mode_id = modes.get(mode)
+        mode_id = mode_mapping[mode]
 
         # Send mode change command
         self.master.mav.command_long_send(
@@ -846,6 +836,17 @@ class Controller:
                         return
                     self.send_position_target(point[0], point[1], point[2])
                     time.sleep(1 / 10)
+    
+    def test_set_point(self, x=0, y=0, z=0):
+        points = [(x, y, -self.takeoff_altitude - z)]
+
+        for j in range(1):
+            for point in points:
+                for i in range(int(self.flight_duration * 3)):
+                    if self.failsafe:
+                        return
+                    self.send_position_target(point[0], point[1], point[2])
+                    time.sleep(1 / 3)
 
     def test_trajectory_2(self):
         waypoints = [
@@ -1355,6 +1356,9 @@ if __name__ == "__main__":
     c.set_initial_yaw()
     c.set_battery_cells()
 
+    set_point_thread = Thread(target=self.test_set_point)
+    set_point_thread.start()
+
     if not c.set_mode('Offboard'):
         pass
         # exit()
@@ -1379,4 +1383,5 @@ if __name__ == "__main__":
     if args.fake_vicon:
         fv.close()
     
+    set_point_thread.join()
     c.stop()
