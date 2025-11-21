@@ -340,6 +340,7 @@ class Controller:
         #     "Offboard": 6
         # }
 
+        self.logger.info("Test1")
         modes = self.master.mode_mapping()
 
         # if mode not in mode_mapping:
