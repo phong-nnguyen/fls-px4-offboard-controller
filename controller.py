@@ -1278,7 +1278,7 @@ if __name__ == "__main__":
     if args.router:
         mavrouter_params = [
             "mavlink-routerd",
-            "-e", "192.168.1.230:14550",
+            "-e", "192.168.1.155:14550",
             "-e", "127.0.0.1:14551",
             "/dev/ttyAMA0:921600"
         ]
