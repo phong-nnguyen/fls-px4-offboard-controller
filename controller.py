@@ -345,7 +345,7 @@ class Controller:
 
         # Send mode change command
         self.master.mav.set_mode_send(
-            self.master.target.system,
+            self.master.target_system,
             mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
             mode_id
         )
