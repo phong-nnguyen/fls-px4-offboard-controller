@@ -83,6 +83,7 @@ class MissionItem:
 class Controller:
     def __init__(self, flight_duration, voltage_threshold, takeoff_altitude, land_altitude, log_level=logging.INFO,
                  sim=False,
+                 router=False,
                  device="/dev/ttyAMA0",
                  baudrate=921600):
         self.device = device
@@ -101,12 +102,15 @@ class Controller:
         self.running_position_estimation = False
         self.running_battery_watcher = False
         self.sim = sim
+        self.router = router
         self.initial_yaw = 0
         self.mission_items = []
         self.velocity_estimator = VelocityEstimator(filter_alpha=0.1)
 
     def connect(self):
         if self.sim:
+            self.master = mavutil.mavlink_connection("udpin:127.0.0.1:14551")
+        elif self.router:
             self.master = mavutil.mavlink_connection("udpin:127.0.0.1:14551")
         else:
             self.master = mavutil.mavlink_connection(self.device, baud=self.baudrate)
@@ -1260,6 +1264,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--repeat-trajectory", type=int, default=3, help="number of trajectory repetitions")
     arg_parser.add_argument("--mission", type=str, help="path to mission way points file")
     arg_parser.add_argument("--idle", action="store_true", help="sit idle")
+    arg_parser.add_argument("--router", action="store_true", help="start mavling-routerd to connect both this script and the qgroundcontrol to the drone")
     arg_parser.add_argument("--simple-takeoff", action="store_true", help="takeoff and land")
     arg_parser.add_argument("--fig8", action="store_true", help="fly figure 8 pattern")
     arg_parser.add_argument("--autotune", action="store_true", help="perform PID autotune")
@@ -1268,10 +1273,22 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
 
     log_level = logging.DEBUG if args.debug or args.status else logging.INFO
+
+    mavrouter_proc = None
+    if args.router:
+        mavrouter_params = [
+            "mavlink-routerd",
+            "-e", "192.168.1.230:14550",
+            "-e", "127.0.0.1:14551",
+            "/dev/ttyAMA0:921600"
+        ]
+        mavrouter_proc = subprocess.Popen(mavrouter_params)
+    
     c = Controller(
         takeoff_altitude=args.takeoff_altitude,
         land_altitude=args.land_altitude,
         sim=args.sim,
+        router=args.router or args.proxy,
         log_level=log_level,
         flight_duration=args.duration,
         voltage_threshold=args.voltage,
@@ -1280,6 +1297,9 @@ if __name__ == "__main__":
 
     if args.reboot:
         c.reboot()
+        if mavrouter_proc is not None:
+            mavrouter_proc.send_signal(signal.SIGINT)  # same as Ctrl+C
+            mavrouter_proc.wait(timeout=5)
         exit()
 
     if args.land:
