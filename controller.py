@@ -219,7 +219,7 @@ class Controller:
             while time.time() - start < 2:
                 heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
                 self.logger.info(f"heartbeat: {heartbeat}")
-                self.logger.info(f"heartbeat base mode: {heart.base_mode}")
+                self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
                 self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
                 if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
                     self.is_armed = True
