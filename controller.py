@@ -218,6 +218,9 @@ class Controller:
             start = time.time()
             while time.time() - start < 2:
                 heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
+                self.logger.info(f"heartbeat: {heartbeat}")
+                self.logger.info(f"heartbeat base mode: {heart.base_mode}")
+                self.logger.info(f"flag safety bitmask: " {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED})
                 if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
                     self.is_armed = True
                     self.logger.info("Vehicle armed")
@@ -339,8 +342,8 @@ class Controller:
         #     self.logger.error(f"Unknown mode: {mode}")
         #     return False
 
-        self.logger.info("Available modes: ")
-        self.logger.info(f"{modes}")
+        self.logger.debug("Available modes: ")
+        self.logger.debug(f"{modes}")
         base_mode_id = modes[mode][0]
         custom_mode_id = modes[mode][1]
         custom_submode_id = modes[mode][2]
@@ -359,8 +362,8 @@ class Controller:
 
         ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_DO_SET_MODE)
         heartbeat = self.master.wait_heartbeat()
-        self.logger.info(f"heartbeat mode: {(heartbeat.custom_mode >> 16) & 0xFFFF}")
-        self.logger.info(f"mode_id: {custom_mode_id}")
+        self.logger.debug(f"heartbeat mode: {(heartbeat.custom_mode >> 16) & 0xFFFF}")
+        self.logger.debug(f"mode_id: {custom_mode_id}")
         if ack and ((heartbeat.custom_mode >> 16) & 0xFFFF) == custom_mode_id:
             self.logger.info(f"Mode changed to {mode}")
             return True
