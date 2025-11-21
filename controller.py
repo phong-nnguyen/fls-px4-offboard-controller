@@ -341,7 +341,9 @@ class Controller:
 
         self.logger.info("Available modes: ")
         self.logger.info(f"{modes}")
-        mode_id = modes[mode][1]
+        base_mode_id = modes[mode][0]
+        custom_mode_id = modes[mode][1]
+        custom_submode_id = modes[mode][2]
 
         # Send mode change command
         self.master.mav.command_long_send(
@@ -349,9 +351,10 @@ class Controller:
             self.master.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
             0,
-            mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED,
-            mode_id,
-            0, 0, 0, 0, 0
+            base_mode_id,
+            custom_mode_id,
+            custom_submode_id,
+            0, 0, 0, 0
         )
 
         ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_DO_SET_MODE)
