@@ -180,7 +180,7 @@ class Controller:
             0, 0, 0, 0, 0, 0  # unused parameters
         )
 
-    def wait_for_command_ack(self, ack_type='COMMAND_ACK', command=None, timeout=5):
+    def wait_for_command_ack(self, ack_type='COMMAND_ACK', command=None, timeout=20):
         """Wait for command acknowledgement"""
         start = time.time()
         while time.time() - start < timeout:
