@@ -1288,7 +1288,7 @@ if __name__ == "__main__":
         takeoff_altitude=args.takeoff_altitude,
         land_altitude=args.land_altitude,
         sim=args.sim,
-        router=args.router or args.proxy,
+        router=args.router,
         log_level=log_level,
         flight_duration=args.duration,
         voltage_threshold=args.voltage,
@@ -1414,3 +1414,7 @@ if __name__ == "__main__":
     
     set_point_thread.join()
     c.stop()
+
+    if mavrouter_proc is not None:
+        mavrouter_proc.send_signal(signal.SIGINT)  # same as Ctrl+C
+        mavrouter_proc.wait(timeout=5)
