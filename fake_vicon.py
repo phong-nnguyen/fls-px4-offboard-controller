@@ -36,7 +36,7 @@ class FakeVicon(threading.Thread):
             qvec = ObjectOrientation(0, 0, 1, 0)
             self.send_pos([0, 0, 0, qvec, current_time])
             time.sleep(1/self.rate)
-
-            if (current_time - last_time) > 1:
-                current_time_us = int(current_time * 1.0e6)
-                self.set_origin(current_time_us)
+            
+            # if (current_time - last_time) > 1:
+            #     current_time_us = int(current_time * 1.0e6)
+            #     self.set_origin(current_time_us)
