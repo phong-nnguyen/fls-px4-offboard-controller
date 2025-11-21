@@ -344,8 +344,6 @@ class Controller:
         # }
 
         modes = self.master.mode_mapping()
-        self.logger.info("Available modes:")
-        self.logger.info(str(modes))
 
         # if mode not in mode_mapping:
         #     self.logger.error(f"Unknown mode: {mode}")
@@ -1234,6 +1232,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--sim", action="store_true", help="connect to simulator")
     arg_parser.add_argument("--localize", action="store_true", help="localize using camera")
     arg_parser.add_argument("--vicon", action="store_true", help="localize using Vicon and save tracking data")
+    arg_parser.add_argument("--fake-vicon", action="store_true", help="send fake vicon data to the drone, never fly with this option")
     arg_parser.add_argument("--rigid-body-name", type=str, default="fls_ap_y",
                             help="the name of the rigid body that represents the FLS in mocap tracking system, works with --vicon.")
     arg_parser.add_argument("--save-vicon", action="store_true", help="save Vicon tracking data only")
@@ -1315,6 +1314,20 @@ if __name__ == "__main__":
         time.sleep(2)
         localize_thread.start()
 
+    if args.fake_vicon:
+        # c.master.mav.set_gps_global_origin_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3), int(time.time() * 1e6))
+        # c.master.mav.set_home_position_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3), 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
+
+        from fake_vicon import FakeVicon
+
+        fv = FakeVicon(rate=args.vicon_rate)
+        fv.send_pos = lambda frame: c.send_vicon_position(frame[0], frame[1], frame[2], frame[4])
+        fv.set_origin = lambda t_usec: (
+            c.master.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_GCS, mavutil.mavlink.MAV_AUTOPILOT_GENERIC, 0, 0, 0),
+            c.master.mav.set_gps_global_origin_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3),
+                                                    int(t_usec)))
+        fv.start()
+        
     if args.vicon:
         lat = 12345
         lon = 12345
@@ -1362,4 +1375,8 @@ if __name__ == "__main__":
             pass
             # exit()
         c.start_flight()
+
+    if args.fake_vicon:
+        fv.close()
+    
     c.stop()
