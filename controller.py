@@ -361,7 +361,7 @@ class Controller:
         heartbeat = self.master.wait_heartbeat()
         self.logger.info(f"heartbeat mode: {(heartbeat.custom_mode >> 16) & 0xFFFF}")
         self.logger.info(f"mode_id: {custom_mode_id}")
-        if ack and heartbeat.custom_mode == custom_mode_id:
+        if ack and ((heartbeat.custom_mode >> 16) & 0xFFFF) == custom_mode_id:
             self.logger.info(f"Mode changed to {mode}")
             return True
         else:
