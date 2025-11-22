@@ -218,32 +218,18 @@ class Controller:
                 0,
                 1, 0, 0, 0, 0, 0, 0
             )
-        msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=2)
-        while msg:
-            self.logger.info(f"Status message: {msg.text}")
-            msg = self.master.recv_match(type='STATUSTEXT', blocking=False)
 
             # Wait for armed status
             start = time.time()
             while time.time() - start < 2:
                 heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
-                if heartbeat:
-                    self.logger.info(f"heartbeat: {heartbeat}")
-                    self.logger.info(f"base_mode: {heartbeat.base_mode} (binary: {bin(heartbeat.base_mode)})")
-                    self.logger.info(f"system_status: {heartbeat.system_status}")
-                    self.logger.info(f"custom_mode: {heartbeat.custom_mode}")
-                    
-                    # Check individual flags
-                    safety_armed = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
-                    custom_mode_enabled = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)
-                    
-                    self.logger.info(f"SAFETY_ARMED flag: {safety_armed}")
-                    self.logger.info(f"CUSTOM_MODE_ENABLED: {custom_mode_enabled}")
-                    
-                    if safety_armed:
-                        self.is_armed = True
-                        self.logger.info("Vehicle armed")
-                        return True
+                self.logger.info(f"heartbeat: {heartbeat}")
+                self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
+                self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
+                if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+                    self.is_armed = True
+                    self.logger.info("Vehicle armed")
+                    return True
 
             self.logger.warning(f"Arm attempt {attempt + 1} failed, retrying...")
 
@@ -1396,7 +1382,7 @@ if __name__ == "__main__":
         # vicon_thread.start()
 
     c.request_data()
-    #c.check_preflight()
+    c.check_preflight()
     c.set_initial_yaw()
     c.set_battery_cells()
 
