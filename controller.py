@@ -352,6 +352,9 @@ class Controller:
         base_mode_id = modes[mode][0]
         custom_mode_id = modes[mode][1]
         custom_submode_id = modes[mode][2]
+        self.logger.debug(f"Base Mode: {base_mode_id}")
+        self.logger.debug(f"Custom Mode: {custom_mode_id}")
+        self.logger.debug(f"Base Mode: {custom_submode_id}")
 
         # Send mode change command
         self.master.mav.command_long_send(
