@@ -1384,7 +1384,7 @@ if __name__ == "__main__":
     c.request_data()
     c.check_preflight()
     c.set_initial_yaw()
-    c.set_battery_cells()
+    #c.set_battery_cells()
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
