@@ -218,6 +218,10 @@ class Controller:
                 0,
                 1, 0, 0, 0, 0, 0, 0
             )
+        msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=2)
+        while msg:
+            self.logger.info(f"Status message: {msg.text}")
+            msg = self.master.recv_match(type='STATUSTEXT', blocking=False)
 
             # Wait for armed status
             start = time.time()
