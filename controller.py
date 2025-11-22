@@ -223,16 +223,23 @@ class Controller:
             start = time.time()
             while time.time() - start < 2:
                 heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
-                msg = self.master.recv_match(type='STATUSTEXT', blocking=False)
-                if msg:
-                    self.logger.info(f"Status: {msg.text}")
-                self.logger.info(f"heartbeat: {heartbeat}")
-                self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
-                self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
-                if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
-                    self.is_armed = True
-                    self.logger.info("Vehicle armed")
-                    return True
+                if heartbeat:
+                    self.logger.info(f"heartbeat: {heartbeat}")
+                    self.logger.info(f"base_mode: {heartbeat.base_mode} (binary: {bin(heartbeat.base_mode)})")
+                    self.logger.info(f"system_status: {heartbeat.system_status}")
+                    self.logger.info(f"custom_mode: {heartbeat.custom_mode}")
+                    
+                    # Check individual flags
+                    safety_armed = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+                    custom_mode_enabled = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_CUSTOM_MODE_ENABLED)
+                    
+                    self.logger.info(f"SAFETY_ARMED flag: {safety_armed}")
+                    self.logger.info(f"CUSTOM_MODE_ENABLED: {custom_mode_enabled}")
+                    
+                    if safety_armed:
+                        self.is_armed = True
+                        self.logger.info("Vehicle armed")
+                        return True
 
             self.logger.warning(f"Arm attempt {attempt + 1} failed, retrying...")
 
