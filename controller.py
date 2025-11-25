@@ -1387,12 +1387,12 @@ if __name__ == "__main__":
     c.request_data()
     c.check_preflight()
     c.set_initial_yaw()
+    self.logger.info("Attemping to ARM (Test1)")
     c.set_battery_cells()
+    self.logger.info("Attemping to ARM (Test2)")
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
-
-    self.logger.info("Attemping to ARM (Test1)")
 
     if not c.set_mode('OFFBOARD'):
         pass
