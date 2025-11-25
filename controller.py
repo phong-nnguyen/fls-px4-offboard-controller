@@ -152,7 +152,7 @@ class Controller:
             self.initial_yaw = yaw_rad
 
     def set_battery_cells(self):
-        param_name = "OSD_CELL_COUNT"
+        param_name = "BAT1_N_CELLS"
         self.master.mav.param_request_read_send(
             self.master.target_system,  # target system
             self.master.target_component,  # target component
