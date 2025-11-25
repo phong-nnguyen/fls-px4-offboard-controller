@@ -216,7 +216,7 @@ class Controller:
                 self.master.target_component,
                 mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                 0,
-                1, 0, 0, 0, 0, 0, 0
+                1, 21196, 0, 0, 0, 0, 0
             )
 
             # Wait for armed status
