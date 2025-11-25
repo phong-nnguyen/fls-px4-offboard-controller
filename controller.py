@@ -226,6 +226,33 @@ class Controller:
 
     """ FUNCTIONS FOR TESTING """
 
+    def check_extended_state(self):
+        """Check extended system state"""
+        msg = self.master.recv_match(type='EXTENDED_SYS_STATE', blocking=True, timeout=3)
+        
+        if not msg:
+            self.logger.warning("No EXTENDED_SYS_STATE message received")
+            return
+        
+        landed_states = {
+            0: "UNDEFINED",
+            1: "ON_GROUND",
+            2: "IN_AIR",
+            3: "TAKEOFF",
+            4: "LANDING"
+        }
+        
+        vtol_states = {
+            0: "UNDEFINED",
+            1: "TRANSITION_TO_FW",
+            2: "TRANSITION_TO_MC",
+            3: "MC",
+            4: "FW"
+        }
+        
+        self.logger.info(f"Landed state: {landed_states.get(msg.landed_state, 'UNKNOWN')}")
+        self.logger.info(f"VTOL state: {vtol_states.get(msg.vtol_state, 'UNKNOWN')}")
+
     def diagnose_arm_failure(self):
         """Comprehensive diagnosis of why arming is failing"""
         self.logger.info("=== ARMING FAILURE DIAGNOSIS ===")
@@ -1537,8 +1564,7 @@ if __name__ == "__main__":
             c.diagnose_arm_failure()
             pass
             # exit()
-        else:
-            c.start_flight()
+        c.start_flight()
 
     if args.fake_vicon:
         fv.close()
