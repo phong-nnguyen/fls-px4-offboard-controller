@@ -226,6 +226,38 @@ class Controller:
 
     """ FUNCTIONS FOR TESTING """
 
+    def diagnose_arm_failure(self):
+        """Comprehensive diagnosis of why arming is failing"""
+        self.logger.info("=== ARMING FAILURE DIAGNOSIS ===")
+        
+        # 1. Check system health
+        self.check_system_health()
+        
+        # 2. Check extended state
+        self.check_extended_state()
+        
+        # 3. Check critical parameters
+        critical_params = {
+            'COM_RCL_EXCEPT': 'RC loss exception mode',
+            'COM_RC_IN_MODE': 'RC input mode',
+            'COM_ARM_WO_GPS': 'Allow arm without GPS',
+            'CBRK_USB_CHK': 'USB safety check circuit breaker',
+            'NAV_RCL_ACT': 'RC loss action',
+            'NAV_DLL_ACT': 'Data link loss action',
+            'COM_OF_LOSS_T': 'Optical flow loss timeout',
+            'COM_OBL_ACT': 'Offboard loss action',
+            'COM_OBL_RC_ACT': 'Offboard loss RC action',
+        }
+        
+        self.logger.info("\n=== CRITICAL PARAMETERS ===")
+        for param, description in critical_params.items():
+            val = self.wait_param(param, timeout=1)
+            self.logger.info(f"{param} ({description}): {val}")
+        
+        # 4. Get any status text
+        self.logger.info("\n=== STATUS MESSAGES ===")
+        self.get_statustext(timeout=3)
+
     def check_system_health(self):
         """Check system health flags"""
         msg = self.master.recv_match(type='SYS_STATUS', blocking=True, timeout=3)
@@ -1502,9 +1534,11 @@ if __name__ == "__main__":
     else:
         c.check_system_health()
         if not c.force_arm():
+            c.diagnose_arm_failure()
             pass
             # exit()
-        c.start_flight()
+        else:
+            c.start_flight()
 
     if args.fake_vicon:
         fv.close()
