@@ -1392,6 +1392,9 @@ if __name__ == "__main__":
     c.set_initial_yaw()
     c.set_battery_cells()
 
+
+    c.logger.info("reaches")
+
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
 
