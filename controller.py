@@ -1408,6 +1408,7 @@ if __name__ == "__main__":
     if args.idle:
         time.sleep(args.duration)
     else:
+        self.logger.info("Attemping to ARM (Test1)")
         if not c.arm_with_retry():
             pass
             # exit()
