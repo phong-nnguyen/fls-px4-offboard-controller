@@ -224,127 +224,6 @@ class Controller:
         
         return False
 
-    """ FUNCTIONS FOR TESTING """
-
-    def check_extended_state(self):
-        """Check extended system state"""
-        msg = self.master.recv_match(type='EXTENDED_SYS_STATE', blocking=True, timeout=3)
-        
-        if not msg:
-            self.logger.warning("No EXTENDED_SYS_STATE message received")
-            return
-        
-        landed_states = {
-            0: "UNDEFINED",
-            1: "ON_GROUND",
-            2: "IN_AIR",
-            3: "TAKEOFF",
-            4: "LANDING"
-        }
-        
-        vtol_states = {
-            0: "UNDEFINED",
-            1: "TRANSITION_TO_FW",
-            2: "TRANSITION_TO_MC",
-            3: "MC",
-            4: "FW"
-        }
-        
-        self.logger.info(f"Landed state: {landed_states.get(msg.landed_state, 'UNKNOWN')}")
-        self.logger.info(f"VTOL state: {vtol_states.get(msg.vtol_state, 'UNKNOWN')}")
-
-    def diagnose_arm_failure(self):
-        """Comprehensive diagnosis of why arming is failing"""
-        self.logger.info("=== ARMING FAILURE DIAGNOSIS ===")
-        
-        # 1. Check system health
-        self.check_system_health()
-        
-        # 2. Check extended state
-        self.check_extended_state()
-        
-        # 3. Check critical parameters
-        critical_params = {
-            'COM_RCL_EXCEPT': 'RC loss exception mode',
-            'COM_RC_IN_MODE': 'RC input mode',
-            'COM_ARM_WO_GPS': 'Allow arm without GPS',
-            'CBRK_USB_CHK': 'USB safety check circuit breaker',
-            'NAV_RCL_ACT': 'RC loss action',
-            'NAV_DLL_ACT': 'Data link loss action',
-            'COM_OF_LOSS_T': 'Optical flow loss timeout',
-            'COM_OBL_ACT': 'Offboard loss action',
-            'COM_OBL_RC_ACT': 'Offboard loss RC action',
-        }
-        
-        self.logger.info("\n=== CRITICAL PARAMETERS ===")
-        for param, description in critical_params.items():
-            val = self.wait_param(param, timeout=1)
-            self.logger.info(f"{param} ({description}): {val}")
-        
-        # 4. Get any status text
-        self.logger.info("\n=== STATUS MESSAGES ===")
-        self.get_statustext(timeout=3)
-
-    def check_system_health(self):
-        """Check system health flags"""
-        msg = self.master.recv_match(type='SYS_STATUS', blocking=True, timeout=3)
-        
-        if not msg:
-            self.logger.error("No SYS_STATUS message received")
-            return False
-        
-        # Health flags
-        health_flags = {
-            'MAV_SYS_STATUS_SENSOR_3D_GYRO': 1 << 0,
-            'MAV_SYS_STATUS_SENSOR_3D_ACCEL': 1 << 1,
-            'MAV_SYS_STATUS_SENSOR_3D_MAG': 1 << 2,
-            'MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE': 1 << 3,
-            'MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE': 1 << 4,
-            'MAV_SYS_STATUS_SENSOR_GPS': 1 << 5,
-            'MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW': 1 << 6,
-            'MAV_SYS_STATUS_SENSOR_VISION_POSITION': 1 << 7,
-            'MAV_SYS_STATUS_SENSOR_LASER_POSITION': 1 << 8,
-            'MAV_SYS_STATUS_SENSOR_EXTERNAL_GROUND_TRUTH': 1 << 9,
-            'MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL': 1 << 10,
-            'MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION': 1 << 11,
-            'MAV_SYS_STATUS_SENSOR_YAW_POSITION': 1 << 12,
-            'MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL': 1 << 13,
-            'MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL': 1 << 14,
-            'MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS': 1 << 15,
-            'MAV_SYS_STATUS_SENSOR_RC_RECEIVER': 1 << 16,
-            'MAV_SYS_STATUS_SENSOR_3D_GYRO2': 1 << 17,
-            'MAV_SYS_STATUS_SENSOR_3D_ACCEL2': 1 << 18,
-            'MAV_SYS_STATUS_SENSOR_3D_MAG2': 1 << 19,
-            'MAV_SYS_STATUS_GEOFENCE': 1 << 20,
-            'MAV_SYS_STATUS_AHRS': 1 << 21,
-            'MAV_SYS_STATUS_TERRAIN': 1 << 22,
-            'MAV_SYS_STATUS_REVERSE_MOTOR': 1 << 23,
-            'MAV_SYS_STATUS_LOGGING': 1 << 24,
-            'MAV_SYS_STATUS_SENSOR_BATTERY': 1 << 25,
-        }
-        
-        self.logger.info("=== SYSTEM HEALTH STATUS ===")
-        self.logger.info(f"Sensors present: 0x{msg.onboard_control_sensors_present:08X}")
-        self.logger.info(f"Sensors enabled: 0x{msg.onboard_control_sensors_enabled:08X}")
-        self.logger.info(f"Sensors healthy: 0x{msg.onboard_control_sensors_health:08X}")
-        
-        self.logger.info("\nDetailed sensor status:")
-        for name, bit in health_flags.items():
-            present = bool(msg.onboard_control_sensors_present & bit)
-            enabled = bool(msg.onboard_control_sensors_enabled & bit)
-            healthy = bool(msg.onboard_control_sensors_health & bit)
-            
-            if present:  # Only show sensors that are present
-                status = "✓ HEALTHY" if healthy else "✗ UNHEALTHY"
-                enabled_str = "enabled" if enabled else "disabled"
-                self.logger.info(f"  {name}: {status} ({enabled_str})")
-        
-        self.logger.info(f"\nBattery remaining: {msg.battery_remaining}%")
-        self.logger.info(f"Voltage: {msg.voltage_battery / 1000.0}V")
-        self.logger.info(f"Current: {msg.current_battery / 100.0}A")
-        
-        return True
-
     def arm_with_retry(self):
         """Arm the vehicle with retry"""
         if not self.connected:
@@ -1356,8 +1235,6 @@ class Controller:
             msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=1)
             if msg:
                 self.logger.info(f"STATUSTEXT [{msg.severity}]: {msg.text}")
-            else:
-                self.logger.error(f"No status message found")
 
     def check_preflight(self):
         self.logger.info("Fetching current EKF sources...")
@@ -1559,9 +1436,7 @@ if __name__ == "__main__":
     if args.idle:
         time.sleep(args.duration)
     else:
-        c.check_system_health()
         if not c.force_arm():
-            c.diagnose_arm_failure()
             pass
             # exit()
         c.start_flight()
