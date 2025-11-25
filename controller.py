@@ -1409,6 +1409,9 @@ if __name__ == "__main__":
         led = MovingDotLED(brightness=args.led_brightness)
         led.start()
 
+    while not c.check_ekf_status():
+        c.logger.info("waiting for EK3 to converge...")
+        time.sleep(1)
     if args.idle:
         time.sleep(args.duration)
     else:
