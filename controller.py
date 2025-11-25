@@ -856,7 +856,6 @@ class Controller:
                     time.sleep(1 / 10)
     
     def test_set_point(self, x=0, y=0, z=0):
-        self.logger.info("Test1")
         points = [(x, y, -self.takeoff_altitude - z)]
 
         for j in range(1):
@@ -1378,6 +1377,12 @@ if __name__ == "__main__":
         # vicon_thread = ViconWrapper(callback=c.send_vicon_position, log_level=log_level)
         # vicon_thread.start()
     elif args.save_vicon:
+        lat = 12345
+        lon = 12345
+        alt = 0
+        c.master.mav.set_gps_global_origin_send(1, lat, lon, alt)
+        c.master.mav.set_home_position_send(1, lat, lon, alt, 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
+
         from mocap import MocapWrapper
         mocap_wrapper = MocapWrapper(args.rigid_body_name)
         # from vicon import ViconWrapper
