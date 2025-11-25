@@ -152,6 +152,7 @@ class Controller:
             self.initial_yaw = yaw_rad
 
     def set_battery_cells(self):
+        self.logger.info("Test1")
         param_name = "OSD_CELL_COUNT"
         self.master.mav.param_request_read_send(
             self.master.target_system,  # target system
@@ -159,6 +160,7 @@ class Controller:
             param_name.encode('utf-8'),  # parameter name (bytes)
             -1  # param index, -1 means use the name
         )
+        self.logger.info("Test2")
 
         message = self.master.recv_match(type='PARAM_VALUE', blocking=True)
         if message is None:
@@ -1387,9 +1389,7 @@ if __name__ == "__main__":
     c.request_data()
     c.check_preflight()
     c.set_initial_yaw()
-    self.logger.info("Attemping to ARM (Test1)")
     c.set_battery_cells()
-    self.logger.info("Attemping to ARM (Test2)")
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
