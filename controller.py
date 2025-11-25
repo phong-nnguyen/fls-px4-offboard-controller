@@ -1466,7 +1466,7 @@ if __name__ == "__main__":
     if args.idle:
         time.sleep(args.duration)
     else:
-        if not c.force_arm():
+        if not c.arm_with_retry():
             pass
             # exit()
         c.start_flight()
