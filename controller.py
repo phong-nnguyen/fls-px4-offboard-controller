@@ -208,7 +208,7 @@ class Controller:
         self.logger.info("Arming motors")
 
         # Try up to 3 times to arm
-        for attempt in range(10):
+        for attempt in range(3):
             # Override any pre-arm failsafe checks
             # 21196 as the 6th param is a magic number that forces arming
             self.master.mav.command_long_send(
@@ -216,7 +216,7 @@ class Controller:
                 self.master.target_component,
                 mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                 0,
-                1, 0, 0, 0, 0, 0, 0
+                1, 21196, 0, 0, 0, 0, 0
             )
 
             # Wait for armed status
@@ -225,7 +225,6 @@ class Controller:
                 heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
                 self.logger.info(f"heartbeat: {heartbeat}")
                 self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
-                self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
                 if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
                     self.is_armed = True
                     self.logger.info("Vehicle armed")
@@ -1409,9 +1408,6 @@ if __name__ == "__main__":
         led = MovingDotLED(brightness=args.led_brightness)
         led.start()
 
-    while not c.check_ekf_status():
-        c.logger.info("waiting for EK3 to converge...")
-        time.sleep(1)
     if args.idle:
         time.sleep(args.duration)
     else:
