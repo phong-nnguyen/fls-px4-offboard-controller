@@ -216,7 +216,7 @@ class Controller:
                 self.master.target_component,
                 mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                 0,
-                1, 21196, 0, 0, 0, 0, 0
+                1, 0, 0, 0, 0, 0, 0
             )
 
             # Wait for armed status
@@ -1387,7 +1387,7 @@ if __name__ == "__main__":
     c.request_data()
     c.check_preflight()
     c.set_initial_yaw()
-    #c.set_battery_cells()
+    c.set_battery_cells()
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
