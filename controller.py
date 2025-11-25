@@ -199,6 +199,31 @@ class Controller:
         self.logger.error(f"No ACK received for command {command}")
         return False
 
+    def force_arm(self):
+        """Force arm bypassing some safety checks - USE WITH CAUTION"""
+        self.logger.warning("Attempting FORCE ARM - bypassing safety checks!")
+        
+        self.master.mav.command_long_send(
+            self.master.target_system,
+            self.master.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,
+            1,      # param1: 1 to arm
+            21196,  # param2: force arm magic number
+            0, 0, 0, 0, 0
+        )
+        
+        time.sleep(1)
+        
+        msg = self.master.recv_match(type='COMMAND_ACK', blocking=True, timeout=3)
+        if msg and msg.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
+            self.logger.info(f"Force ARM result: {msg.result}")
+            if msg.result == 0:
+                self.is_armed = True
+                return True
+        
+        return False
+
     def arm_with_retry(self):
         """Arm the vehicle with retry"""
         if not self.connected:
@@ -216,7 +241,7 @@ class Controller:
                 self.master.target_component,
                 mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                 0,
-                1, 21196, 0, 0, 0, 0, 0
+                1, 0, 0, 0, 0, 0, 0
             )
 
             # Wait for armed status
@@ -1411,7 +1436,7 @@ if __name__ == "__main__":
     if args.idle:
         time.sleep(args.duration)
     else:
-        if not c.arm_with_retry():
+        if not c.force_arm():
             pass
             # exit()
         c.start_flight()
