@@ -209,8 +209,6 @@ class Controller:
 
         # Try up to 3 times to arm
         for attempt in range(3):
-            # Override any pre-arm failsafe checks
-            # 21196 as the 6th param is a magic number that forces arming
             self.master.mav.command_long_send(
                 self.master.target_system,
                 self.master.target_component,
@@ -219,19 +217,30 @@ class Controller:
                 1, 0, 0, 0, 0, 0, 0
             )
 
-            # Wait for armed status
+            # Wait for ACK first to see if command was accepted
+            ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM)
+            if not ack:
+                self.logger.warning(f"Arm attempt {attempt + 1} failed - command rejected by PX4")
+                if attempt < 2:  # Don't sleep on last attempt
+                    time.sleep(1)
+                continue
+
+            # Command was accepted, now wait for armed status in heartbeat
             start = time.time()
             while time.time() - start < 2:
                 heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
-                self.logger.info(f"heartbeat: {heartbeat}")
-                self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
-                self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
-                if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
-                    self.is_armed = True
-                    self.logger.info("Vehicle armed")
-                    return True
+                if heartbeat:
+                    self.logger.info(f"heartbeat: {heartbeat}")
+                    self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
+                    self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
+                    armed = bool(heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED)
+                    self.logger.info(f"armed bit set: {armed}")
+                    if armed:
+                        self.is_armed = True
+                        self.logger.info("Vehicle armed")
+                        return True
 
-            self.logger.warning(f"Arm attempt {attempt + 1} failed, retrying...")
+            self.logger.warning(f"Arm attempt {attempt + 1} failed - command accepted but not armed after 2 seconds")
 
         self.logger.error("Failed to arm after multiple attempts")
         return False
