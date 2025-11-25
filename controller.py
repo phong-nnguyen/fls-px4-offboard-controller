@@ -860,11 +860,11 @@ class Controller:
 
         for j in range(1):
             for point in points:
-                for i in range(int(self.flight_duration * 10)):
+                for i in range(int(self.flight_duration * 3)):
                     if self.failsafe:
                         return
                     self.send_position_target(point[0], point[1], point[2])
-                    time.sleep(1 / 10)
+                    time.sleep(1 / 3)
 
     def test_trajectory_2(self):
         waypoints = [
@@ -1395,12 +1395,13 @@ if __name__ == "__main__":
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
-    time.sleep(2)
 
     if not c.set_mode('OFFBOARD'):
         pass
         # exit()
 
+    time.sleep(0.5)
+    
     if args.mission:
         c.send_mission_from_file(args.mission)
 
