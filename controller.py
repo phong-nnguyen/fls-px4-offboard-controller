@@ -1351,9 +1351,9 @@ if __name__ == "__main__":
     if args.fake_vicon:
         # c.master.mav.set_gps_global_origin_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3), int(time.time() * 1e6))
         # c.master.mav.set_home_position_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3), 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
-        # lat = 12345
-        # lon = 12345
-        # alt = 0
+        lat = 12345
+        lon = 12345
+        alt = 0
         # c.master.mav.set_gps_global_origin_send(1, lat, lon, alt)
         # c.master.mav.set_home_position_send(1, lat, lon, alt, 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
         from fake_vicon import FakeVicon
