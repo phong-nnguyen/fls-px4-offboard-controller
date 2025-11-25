@@ -1354,16 +1354,16 @@ if __name__ == "__main__":
         lat = 12345
         lon = 12345
         alt = 0
-        # c.master.mav.set_gps_global_origin_send(1, lat, lon, alt)
-        # c.master.mav.set_home_position_send(1, lat, lon, alt, 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
+        c.master.mav.set_gps_global_origin_send(1, lat, lon, alt)
+        c.master.mav.set_home_position_send(1, lat, lon, alt, 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
         from fake_vicon import FakeVicon
 
         fv = FakeVicon(rate=args.vicon_rate)
         fv.send_pos = lambda frame: c.send_vicon_position(frame[0], frame[1], frame[2], frame[4])
-        fv.set_origin = lambda t_usec: (
-            c.master.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_GCS, mavutil.mavlink.MAV_AUTOPILOT_GENERIC, 0, 0, 0),
-            c.master.mav.set_gps_global_origin_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3),
-                                                    int(t_usec)))
+        # fv.set_origin = lambda t_usec: (
+        #     c.master.mav.heartbeat_send(mavutil.mavlink.MAV_TYPE_GCS, mavutil.mavlink.MAV_AUTOPILOT_GENERIC, 0, 0, 0),
+        #     c.master.mav.set_gps_global_origin_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3),
+        #                                             int(t_usec)))
         fv.start()
         
     if args.vicon:
