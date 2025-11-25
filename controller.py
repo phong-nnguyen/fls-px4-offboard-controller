@@ -208,7 +208,7 @@ class Controller:
         self.logger.info("Arming motors")
 
         # Try up to 3 times to arm
-        for attempt in range(3):
+        for attempt in range(10):
             # Override any pre-arm failsafe checks
             # 21196 as the 6th param is a magic number that forces arming
             self.master.mav.command_long_send(
