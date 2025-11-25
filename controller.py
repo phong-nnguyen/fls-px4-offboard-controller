@@ -1223,28 +1223,28 @@ class Controller:
             time.sleep(1)
 
     def check_setpoint_reception(self):
-    """Check if PX4 is receiving setpoints"""
-    msg = c.master.recv_match(type='POSITION_TARGET_LOCAL_NED', blocking=True, timeout=2)
-    if msg:
-        self.logger.info(f"Setpoint being received: x={msg.x}, y={msg.y}, z={msg.z}")
-        return True
-    else:
-        self.logger.warning("No setpoint echo received!")
-        return False
+        """Check if PX4 is receiving setpoints"""
+        msg = c.master.recv_match(type='POSITION_TARGET_LOCAL_NED', blocking=True, timeout=2)
+        if msg:
+            self.logger.info(f"Setpoint being received: x={msg.x}, y={msg.y}, z={msg.z}")
+            return True
+        else:
+            self.logger.warning("No setpoint echo received!")
+            return False
 
-    def stop(self):
-        self.land()
+        def stop(self):
+            self.land()
 
-        if args.led:
-            led.stop()
+            if args.led:
+                led.stop()
 
-        if args.localize:
-            self.running_position_estimation = False
-            localize_thread.join()
+            if args.localize:
+                self.running_position_estimation = False
+                localize_thread.join()
 
-        if args.vicon or args.save_vicon:
-            mocap_wrapper.close()
-            # vicon_thread.stop()
+            if args.vicon or args.save_vicon:
+                mocap_wrapper.close()
+                # vicon_thread.stop()
 
 
 if __name__ == "__main__":
