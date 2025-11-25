@@ -1351,7 +1351,11 @@ if __name__ == "__main__":
     if args.fake_vicon:
         # c.master.mav.set_gps_global_origin_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3), int(time.time() * 1e6))
         # c.master.mav.set_home_position_send(1, int(lat * 1.0e7), int(lon * 1.0e7), int(alt * 1.0e3), 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
-
+        lat = 12345
+        lon = 12345
+        alt = 0
+        c.master.mav.set_gps_global_origin_send(1, lat, lon, alt)
+        c.master.mav.set_home_position_send(1, lat, lon, alt, 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
         from fake_vicon import FakeVicon
 
         fv = FakeVicon(rate=args.vicon_rate)
@@ -1377,12 +1381,6 @@ if __name__ == "__main__":
         # vicon_thread = ViconWrapper(callback=c.send_vicon_position, log_level=log_level)
         # vicon_thread.start()
     elif args.save_vicon:
-        lat = 12345
-        lon = 12345
-        alt = 0
-        c.master.mav.set_gps_global_origin_send(1, lat, lon, alt)
-        c.master.mav.set_home_position_send(1, lat, lon, alt, 0, 0, 0, [1, 0, 0, 0], 0, 0, 1)
-
         from mocap import MocapWrapper
         mocap_wrapper = MocapWrapper(args.rigid_body_name)
         # from vicon import ViconWrapper
