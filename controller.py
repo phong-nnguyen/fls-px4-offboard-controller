@@ -1396,12 +1396,14 @@ if __name__ == "__main__":
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
 
+    time.sleep(3)
+
     if not c.set_mode('OFFBOARD'):
         pass
         # exit()
 
-    time.sleep(0.5)
-    
+    time.sleep(1)
+
     if args.mission:
         c.send_mission_from_file(args.mission)
 
@@ -1410,6 +1412,8 @@ if __name__ == "__main__":
 
         led = MovingDotLED(brightness=args.led_brightness)
         led.start()
+
+    c.get_statustext(timeout=2)
 
     if args.idle:
         time.sleep(args.duration)
