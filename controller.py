@@ -856,6 +856,7 @@ class Controller:
                     time.sleep(1 / 10)
     
     def test_set_point(self, x=0, y=0, z=0):
+        self.logger.info("Test1")
         points = [(x, y, -self.takeoff_altitude - z)]
 
         for j in range(1):
@@ -1391,7 +1392,6 @@ if __name__ == "__main__":
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
-    self.logger.info("Test1")
 
     if not c.set_mode('OFFBOARD'):
         pass
