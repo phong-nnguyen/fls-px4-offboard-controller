@@ -225,100 +225,6 @@ class Controller:
         return False
 
     """ FUNCTIONS FOR TESTING """
-    def request_autopilot_version(self):
-        """Request autopilot capabilities and version"""
-        self.master.mav.command_long_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES,
-            0,
-            1, 0, 0, 0, 0, 0, 0
-        )
-        time.sleep(0.5)
-
-    def get_all_status_messages(self, duration=5):
-        """Listen for ALL message types for debugging"""
-        self.logger.info(f"Listening for all status messages for {duration} seconds...")
-        start = time.time()
-        
-        message_types = [
-            'STATUSTEXT',
-            'SYS_STATUS', 
-            'COMMAND_ACK',
-            'EXTENDED_SYS_STATE',
-            'ESTIMATOR_STATUS',
-            'VIBRATION',
-            'GPS_RAW_INT',
-            'SAFETY_SET_ALLOWED_AREA',
-            'SAFETY_ALLOWED_AREA'
-        ]
-        
-        while time.time() - start < duration:
-            for msg_type in message_types:
-                msg = self.master.recv_match(type=msg_type, blocking=False, timeout=0.01)
-                if msg:
-                    self.logger.info(f"{msg_type}: {msg}")
-            time.sleep(0.1)
-
-    def check_extended_state(self):
-        """Check extended system state"""
-        msg = self.master.recv_match(type='EXTENDED_SYS_STATE', blocking=True, timeout=3)
-        
-        if not msg:
-            self.logger.warning("No EXTENDED_SYS_STATE message received")
-            return
-        
-        landed_states = {
-            0: "UNDEFINED",
-            1: "ON_GROUND",
-            2: "IN_AIR",
-            3: "TAKEOFF",
-            4: "LANDING"
-        }
-        
-        vtol_states = {
-            0: "UNDEFINED",
-            1: "TRANSITION_TO_FW",
-            2: "TRANSITION_TO_MC",
-            3: "MC",
-            4: "FW"
-        }
-        
-        self.logger.info(f"Landed state: {landed_states.get(msg.landed_state, 'UNKNOWN')}")
-        self.logger.info(f"VTOL state: {vtol_states.get(msg.vtol_state, 'UNKNOWN')}")
-
-
-    def diagnose_arm_failure(self):
-        """Comprehensive diagnosis of why arming is failing"""
-        self.logger.info("=== ARMING FAILURE DIAGNOSIS ===")
-        
-        # 1. Check system health
-        self.check_system_health()
-        
-        # 2. Check extended state
-        self.check_extended_state()
-        
-        # 3. Check critical parameters
-        critical_params = {
-            'COM_RCL_EXCEPT': 'RC loss exception mode',
-            'COM_RC_IN_MODE': 'RC input mode',
-            'COM_ARM_WO_GPS': 'Allow arm without GPS',
-            'CBRK_USB_CHK': 'USB safety check circuit breaker',
-            'NAV_RCL_ACT': 'RC loss action',
-            'NAV_DLL_ACT': 'Data link loss action',
-            'COM_OF_LOSS_T': 'Optical flow loss timeout',
-            'COM_OBL_ACT': 'Offboard loss action',
-            'COM_OBL_RC_ACT': 'Offboard loss RC action',
-        }
-        
-        self.logger.info("\n=== CRITICAL PARAMETERS ===")
-        for param, description in critical_params.items():
-            val = self.wait_param(param, timeout=1)
-            self.logger.info(f"{param} ({description}): {val}")
-        
-        # 4. Get any status text
-        self.logger.info("\n=== STATUS MESSAGES ===")
-        self.get_statustext(timeout=3)
 
     def check_system_health(self):
         """Check system health flags"""
@@ -1391,6 +1297,8 @@ class Controller:
             msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=1)
             if msg:
                 self.logger.info(f"STATUSTEXT [{msg.severity}]: {msg.text}")
+            else:
+                self.logger.error(f"No status message found")
 
     def check_preflight(self):
         self.logger.info("Fetching current EKF sources...")
@@ -1593,10 +1501,7 @@ if __name__ == "__main__":
         time.sleep(args.duration)
     else:
         c.check_system_health()
-        c.check_extended_state()
         if not c.force_arm():
-            c.logger.error("=== ARMING FAILED - RUNNING DIAGNOSTICS ===")
-            c.get_all_status_messages(duration=5)
             pass
             # exit()
         c.start_flight()
