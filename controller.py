@@ -199,6 +199,20 @@ class Controller:
         self.logger.error(f"No ACK received for command {command}")
         return False
 
+
+    def disable_safety_switch(self):
+        """Disable the safety switch requirement"""
+        self.logger.info("Disabling safety switch...")
+        self.master.mav.command_long_send(
+            self.master.target_system,
+            self.master.target_component,
+            mavutil.mavlink.MAV_CMD_DO_SET_SAFETY_SWITCH_STATE,
+            0,
+            0,  # 0 = disable safety (allow arming), 1 = enable safety
+            0, 0, 0, 0, 0, 0
+        )
+        time.sleep(1)
+    
     def arm_with_retry(self):
         """Arm the vehicle with retry"""
         if not self.connected:
@@ -219,43 +233,43 @@ class Controller:
                 1, 0, 0, 0, 0, 0, 0
             )
 
-            # Wait for COMMAND_ACK instead of just heartbeat
-            start = time.time()
-            while time.time() - start < 3:
-                msg = self.master.recv_match(type='COMMAND_ACK', blocking=True, timeout=1)
-                if msg and msg.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
-                    self.logger.info(f"ARM COMMAND_ACK received: result={msg.result}")
+        # Wait for COMMAND_ACK instead of just heartbeat
+        start = time.time()
+        while time.time() - start < 3:
+            msg = self.master.recv_match(type='COMMAND_ACK', blocking=True, timeout=1)
+            if msg and msg.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
+                self.logger.info(f"ARM COMMAND_ACK received: result={msg.result}")
+                
+                if msg.result == mavutil.mavlink.MAV_RESULT_ACCEPTED:
+                    # Wait for actual armed status in heartbeat
+                    time.sleep(0.5)
+                    heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=2)
+                    if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+                        self.is_armed = True
+                        self.logger.info("Vehicle armed successfully")
+                        return True
+                else:
+                    # Log the rejection reason
+                    result_names = {
+                        0: "ACCEPTED",
+                        1: "TEMPORARILY_REJECTED", 
+                        2: "DENIED",
+                        3: "UNSUPPORTED",
+                        4: "FAILED",
+                        5: "IN_PROGRESS"
+                    }
+                    result_name = result_names.get(msg.result, f"UNKNOWN({msg.result})")
+                    self.logger.error(f"Arm command rejected: {result_name}")
                     
-                    if msg.result == mavutil.mavlink.MAV_RESULT_ACCEPTED:
-                        # Wait for actual armed status in heartbeat
-                        time.sleep(0.5)
-                        heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=2)
-                        if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
-                            self.is_armed = True
-                            self.logger.info("Vehicle armed successfully")
-                            return True
-                    else:
-                        # Log the rejection reason
-                        result_names = {
-                            0: "ACCEPTED",
-                            1: "TEMPORARILY_REJECTED", 
-                            2: "DENIED",
-                            3: "UNSUPPORTED",
-                            4: "FAILED",
-                            5: "IN_PROGRESS"
-                        }
-                        result_name = result_names.get(msg.result, f"UNKNOWN({msg.result})")
-                        self.logger.error(f"Arm command rejected: {result_name}")
-                        
-                        # Get detailed status text
-                        self.get_statustext(timeout=2)
-                        break
+                    # Get detailed status text
+                    self.get_statustext(timeout=2)
+                    break
 
-            self.logger.warning(f"Arm attempt {attempt + 1} failed, retrying...")
-            time.sleep(1)
+        self.logger.warning(f"Arm attempt {attempt + 1} failed, retrying...")
+        time.sleep(1)
 
-        self.logger.error("Failed to arm after multiple attempts")
-        return False
+    self.logger.error("Failed to arm after multiple attempts")
+    return False
 
     def arm(self):
         """Arm the vehicle"""
@@ -1430,6 +1444,9 @@ if __name__ == "__main__":
         led = MovingDotLED(brightness=args.led_brightness)
         led.start()
 
+
+    c.disable_safety_switch()
+    
     if args.idle:
         time.sleep(args.duration)
     else:
