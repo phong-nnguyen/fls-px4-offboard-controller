@@ -219,19 +219,40 @@ class Controller:
                 1, 0, 0, 0, 0, 0, 0
             )
 
-            # Wait for armed status
+            # Wait for COMMAND_ACK instead of just heartbeat
             start = time.time()
-            while time.time() - start < 2:
-                heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
-                self.logger.info(f"heartbeat: {heartbeat}")
-                self.logger.info(f"heartbeat base mode: {heartbeat.base_mode}")
-                self.logger.info(f"flag safety bitmask: {mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED}")
-                if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
-                    self.is_armed = True
-                    self.logger.info("Vehicle armed")
-                    return True
+            while time.time() - start < 3:
+                msg = self.master.recv_match(type='COMMAND_ACK', blocking=True, timeout=1)
+                if msg and msg.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
+                    self.logger.info(f"ARM COMMAND_ACK received: result={msg.result}")
+                    
+                    if msg.result == mavutil.mavlink.MAV_RESULT_ACCEPTED:
+                        # Wait for actual armed status in heartbeat
+                        time.sleep(0.5)
+                        heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=2)
+                        if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+                            self.is_armed = True
+                            self.logger.info("Vehicle armed successfully")
+                            return True
+                    else:
+                        # Log the rejection reason
+                        result_names = {
+                            0: "ACCEPTED",
+                            1: "TEMPORARILY_REJECTED", 
+                            2: "DENIED",
+                            3: "UNSUPPORTED",
+                            4: "FAILED",
+                            5: "IN_PROGRESS"
+                        }
+                        result_name = result_names.get(msg.result, f"UNKNOWN({msg.result})")
+                        self.logger.error(f"Arm command rejected: {result_name}")
+                        
+                        # Get detailed status text
+                        self.get_statustext(timeout=2)
+                        break
 
             self.logger.warning(f"Arm attempt {attempt + 1} failed, retrying...")
+            time.sleep(1)
 
         self.logger.error("Failed to arm after multiple attempts")
         return False
@@ -1222,29 +1243,19 @@ class Controller:
             self.logger.info("waiting for EK3 to converge...")
             time.sleep(1)
 
-    def check_setpoint_reception(self):
-        """Check if PX4 is receiving setpoints"""
-        msg = c.master.recv_match(type='POSITION_TARGET_LOCAL_NED', blocking=True, timeout=2)
-        if msg:
-            self.logger.info(f"Setpoint being received: x={msg.x}, y={msg.y}, z={msg.z}")
-            return True
-        else:
-            self.logger.warning("No setpoint echo received!")
-            return False
+    def stop(self):
+        self.land()
 
-        def stop(self):
-            self.land()
+        if args.led:
+            led.stop()
 
-            if args.led:
-                led.stop()
+        if args.localize:
+            self.running_position_estimation = False
+            localize_thread.join()
 
-            if args.localize:
-                self.running_position_estimation = False
-                localize_thread.join()
-
-            if args.vicon or args.save_vicon:
-                mocap_wrapper.close()
-                # vicon_thread.stop()
+        if args.vicon or args.save_vicon:
+            mocap_wrapper.close()
+            # vicon_thread.stop()
 
 
 if __name__ == "__main__":
@@ -1405,48 +1416,10 @@ if __name__ == "__main__":
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
-    c.logger.info("Setpoint thread started, waiting 3 seconds...")
-    time.sleep(3)
-
-
-    # Check what messages we're receiving
-    c.logger.info("Checking for position messages...")
-    for _ in range(5):
-        msg = c.master.recv_match(type='LOCAL_POSITION_NED', blocking=True, timeout=1)
-        if msg:
-            c.logger.info(f"LOCAL_POSITION_NED: x={msg.x:.3f}, y={msg.y:.3f}, z={msg.z:.3f}")
-        else:
-            c.logger.warning("No LOCAL_POSITION_NED received!")
-        time.sleep(0.2)
-
-    # Check heartbeat and system status
-    c.logger.info("Checking system status...")
-    hb = c.master.recv_match(type='HEARTBEAT', blocking=True, timeout=2)
-    if hb:
-        c.logger.info(f"System status: {hb.system_status}, mode: {hb.custom_mode}")
-    else:
-        c.logger.error("No heartbeat!")
-
-    # Get any status text messages
-    c.logger.info("Checking for status messages...")
-    c.get_statustext(timeout=3)
-
 
     if not c.set_mode('OFFBOARD'):
         pass
         # exit()
-
-    c.logger.info("OFFBOARD mode set successfully, waiting 2 seconds...")
-    time.sleep(2)
-
-    # Check heartbeat again
-    hb = c.master.recv_match(type='HEARTBEAT', blocking=True, timeout=2)
-    if hb:
-        c.logger.info(f"After OFFBOARD - System status: {hb.system_status}, base_mode: {hb.base_mode}, custom_mode: {hb.custom_mode}")
-
-    # Get status messages before arming
-    c.logger.info("Pre-arm status check...")
-    c.get_statustext(timeout=3)
 
     if args.mission:
         c.send_mission_from_file(args.mission)
