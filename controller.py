@@ -304,10 +304,10 @@ class Controller:
                 else:
                     self.logger.error(f"✗ Arm command rejected: {result_name}")
             
-            # Check for STATUSTEXT explaining why
-            statustext = self.master.recv_match(type='STATUSTEXT', blocking=True)
-            if statustext:
-                self.logger.info(statustext)
+                # Check for STATUSTEXT explaining why
+                statustext = self.master.recv_match(type='STATUSTEXT', blocking=True)
+                if statustext:
+                    self.logger.info(statustext)
             
             # Check heartbeat for armed status
             heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=False)
