@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 async def run():
     drone = System()
-    await drone.connect(system_address="/dev/ttyAMA0")
+    await drone.connect(system_address="serial:///dev/ttyACM0:921600")
 
     status_text_task = asyncio.ensure_future(print_status_text(drone))
 
