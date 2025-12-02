@@ -390,7 +390,7 @@ class Controller:
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
             0,
             1,
-            3,
+            6,
             0,
             0, 0, 0, 0
         )
