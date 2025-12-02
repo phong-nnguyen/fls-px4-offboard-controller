@@ -263,7 +263,7 @@ class Controller:
         self.logger.error("Failed to arm after multiple attempts")
         return False
 
-    def arm_verbose(self):
+    async def arm_verbose(self):
         """Arm with detailed error reporting"""
         self.logger.info("Attempting to arm...")
         
@@ -305,7 +305,7 @@ class Controller:
                     self.logger.error(f"✗ Arm command rejected: {result_name}")
             
             # Check for STATUSTEXT explaining why
-            statustext = self.master.recv_match(type='STATUSTEXT', blocking=False)
+            await statustext = self.master.recv_match(type='STATUSTEXT', blocking=False)
             if statustext:
                 self.logger.info(statustext)
             
