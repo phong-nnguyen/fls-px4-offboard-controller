@@ -1367,7 +1367,7 @@ class Controller:
                 Serial.logger.info(msg)
 
         
-        return len([x for x in prearm_issues if x[0] <= 4]) == 0  # Return True if no errors
+        return 0  # Return True if no errors
 
     def _decode_sensor_health(self, sys_status):
         """Decode and display sensor health flags"""
