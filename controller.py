@@ -244,7 +244,7 @@ class Controller:
                 1, 21196, 0, 0, 0, 0, 0
             )
 
-            msg = self.master.recv.match(type="COMMAND_ACK", blocking=True)
+            msg = self.master.recv_match(type="COMMAND_ACK", blocking=True)
             self.logger.info(msg)
 
             # Wait for armed status
