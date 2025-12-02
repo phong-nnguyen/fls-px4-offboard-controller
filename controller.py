@@ -389,17 +389,17 @@ class Controller:
             self.master.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
             0,
-            1,
-            6,
-            0,
+            base_mode_id,
+            custom_mode_id,
+            custom_submode_id,
             0, 0, 0, 0
         )
 
         ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_DO_SET_MODE)
         heartbeat = self.master.wait_heartbeat()
         self.logger.debug(f"Custom Mode Flag {heartbeat.base_mode}")
-        self.logger.debug(f"heartbeat mode: {heartbeat.custom_mode}")
-        if ack and (heartbeat.custom_mode) == custom_mode_id:
+        self.logger.debug(f"heartbeat mode: {(heartbeat.custom_mode >> 16) & 0xFF}")
+        if ack and ((heartbeat.custom_mode >> 16) & 0xFF) == custom_mode_id:
             self.logger.info(f"Mode changed to {mode}")
             return True
         else:
