@@ -305,7 +305,7 @@ class Controller:
                     self.logger.error(f"✗ Arm command rejected: {result_name}")
             
                 # Check for STATUSTEXT explaining why
-                statustext = self.master.recv_match(type='STATUSTEXT', blocking=True)
+                statustext = self.master.recv_match(type='SYS_STATUS', blocking=True)
                 if statustext:
                     self.logger.info(statustext)
             
