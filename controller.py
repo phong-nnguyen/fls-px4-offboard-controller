@@ -381,7 +381,7 @@ class Controller:
         custom_submode_id = modes[mode][2]
         self.logger.debug(f"Base Mode: {base_mode_id}")
         self.logger.debug(f"Custom Mode: {custom_mode_id}")
-        self.logger.debug(f"Base Mode: {custom_submode_id}")
+        self.logger.debug(f"Custom submode: {custom_submode_id}")
 
         # Send mode change command
         self.master.mav.command_long_send(
@@ -397,9 +397,9 @@ class Controller:
 
         ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_DO_SET_MODE)
         heartbeat = self.master.wait_heartbeat()
+        self.logger.debug(f"Custom Mode Flag {heartbeat.base_mode}")
         self.logger.debug(f"heartbeat mode: {heartbeat.custom_mode}")
-        self.logger.debug(f"mode_id: {custom_mode_id}")
-        if ack and ((heartbeat.custom_mode >> 16) & 0xFFFF) == custom_mode_id:
+        if ack and (heartbeat.custom_mode) == custom_mode_id:
             self.logger.info(f"Mode changed to {mode}")
             return True
         else:
