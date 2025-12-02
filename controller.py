@@ -1235,35 +1235,6 @@ class Controller:
             msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=1)
             if msg:
                 self.logger.info(f"STATUSTEXT [{msg.severity}]: {msg.text}")
-    
-    def start_message_monitor(self, message_types=None):
-        """Start background thread to monitor multiple message types"""
-        if message_types is None:
-            message_types = ['STATUSTEXT', 'COMMAND_ACK']
-        
-        def monitor():
-            self.logger.info(f"Message monitor started for: {message_types}")
-            severity_names = {
-                0: "EMERGENCY", 1: "ALERT", 2: "CRITICAL", 3: "ERROR",
-                4: "WARNING", 5: "NOTICE", 6: "INFO", 7: "DEBUG"
-            }
-            
-            while self.connected:
-                for msg_type in message_types:
-                    msg = self.master.recv_match(type=msg_type, blocking=False, timeout=0.01)
-                    if msg:
-                        if msg_type == 'STATUSTEXT':
-                            severity = severity_names.get(msg.severity, f"UNKNOWN({msg.severity})")
-                            self.logger.info(f"[{msg_type}-{severity}] {msg.text}")
-                        else:
-                            self.logger.info(f"[{msg_type}] {msg}")
-                
-                time.sleep(0.05)
-            
-            self.logger.info("Message monitor stopped")
-        
-        monitor_thread = Thread(target=monitor, daemon=True)
-        monitor_thread.start()
 
     def check_preflight(self):
         self.logger.info("Fetching current EKF sources...")
@@ -1351,7 +1322,6 @@ if __name__ == "__main__":
         voltage_threshold=args.voltage,
     )
     c.connect()
-    c.start_message_monitor(['STATUSTEXT', 'COMMAND_ACK'])
 
     if args.reboot:
         c.reboot()
