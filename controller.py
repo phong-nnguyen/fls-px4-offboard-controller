@@ -292,7 +292,7 @@ class Controller:
         """Arm with detailed error reporting"""
         self.logger.info("Attempting to arm...")
 
-        self.param_change
+        self.param_change()
 
 
         # Send arm command
