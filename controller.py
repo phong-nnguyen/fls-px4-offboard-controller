@@ -11,6 +11,7 @@ from threading import Thread
 
 import numpy as np
 from pymavlink import mavutil
+print(pymavlink.__file__)
 
 from log import LoggerFactory
 from velocity_estimator import VelocityEstimator
