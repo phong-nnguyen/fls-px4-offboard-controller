@@ -263,10 +263,38 @@ class Controller:
         self.logger.error("Failed to arm after multiple attempts")
         return False
 
+
+    def param_change(self):
+        self.logger.info("Sending parameter changes")
+
+        disable_RC = "COM_RC_IN_MODE"
+
+        self.master.mav.param_set_send(
+            self.master.target_system, self.master.target_component,
+            disable_RC.encode('utf-8'),
+            4,
+            mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+            
+        )
+
+        battery_disable = "CBRK_SUPPLY_CHK"
+
+        self.master.mav.param_set_send(
+            self.master.target_system, self.master.target_component,
+            battery_disable.encode('utf-8'),
+            894281,
+            mavutil.mavlink.MAV_PARAM_TYPE_REAL32
+        )
+
+        self.logger.info("Parameter changes sent")
+
     def arm_verbose(self):
         """Arm with detailed error reporting"""
         self.logger.info("Attempting to arm...")
-        
+
+        self.param_change
+
+
         # Send arm command
         self.master.mav.command_long_send(
             self.master.target_system,
