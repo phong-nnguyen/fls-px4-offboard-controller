@@ -108,7 +108,7 @@ class Controller:
         self.mission_items = []
         self.velocity_estimator = VelocityEstimator(filter_alpha=0.1)
 
-    def connect(self):
+    async def connect(self):
         if self.sim or self.router:
             connection_string = "udp://:127.0.0.1:14551"
         else:
