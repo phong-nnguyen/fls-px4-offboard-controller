@@ -1034,8 +1034,7 @@ class Controller:
         self.master.mav.vision_speed_estimate_send(
             int(time.time() * 1e6),  # timestamp in microseconds
             vx, vy, vz,  # velocities in m/s
-            covariance,  # covariance matrix
-            0  # reset counter
+            covariance  # covariance matrix
         )
 
     def send_vision_odometry(self, x, y, z, vx, vy, vz, timestamp=None):
