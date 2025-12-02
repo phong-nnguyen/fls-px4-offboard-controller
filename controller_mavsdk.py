@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def run():
-    drone = System()
+    drone = System(mavsdk_server_address="localhost", port=50051)
     await drone.connect(system_address="udpin://0.0.0.0:14540")
 
     status_text_task = asyncio.ensure_future(print_status_text(drone))
