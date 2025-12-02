@@ -263,6 +263,71 @@ class Controller:
         self.logger.error("Failed to arm after multiple attempts")
         return False
 
+    def arm_verbose(self):
+        """Arm with detailed error reporting"""
+        self.logger.info("Attempting to arm...")
+        
+        # Send arm command
+        self.master.mav.command_long_send(
+            self.master.target_system,
+            self.master.target_component,
+            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
+            0,
+            1, 0, 0, 0, 0, 0, 0
+        )
+        
+        # Wait for both ACK and STATUSTEXT messages
+        start_time = time.time()
+        ack_received = False
+        
+        while time.time() - start_time < 5:
+            # Check for command acknowledgement
+            ack = self.master.recv_match(type='COMMAND_ACK', blocking=False)
+            if ack and ack.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
+                ack_received = True
+                result_msgs = {
+                    0: "ACCEPTED",
+                    1: "TEMPORARILY_REJECTED", 
+                    2: "DENIED",
+                    3: "UNSUPPORTED",
+                    4: "FAILED",
+                    5: "IN_PROGRESS",
+                    6: "CANCELLED"
+                }
+                result_name = result_msgs.get(ack.result, f"UNKNOWN({ack.result})")
+                self.logger.info(f"Arm command result: {result_name}")
+                
+                if ack.result == 0:  # ACCEPTED
+                    self.is_armed = True
+                    self.logger.info("✓ Vehicle armed successfully")
+                    return True
+                else:
+                    self.logger.error(f"✗ Arm command rejected: {result_name}")
+            
+            # Check for STATUSTEXT explaining why
+            statustext = self.master.recv_match(type='STATUSTEXT', blocking=False)
+            if statustext:
+                text = statustext.text.strip()
+                if any(keyword in text.lower() for keyword in ['arm', 'reject', 'denied', 'prearm']):
+                    severity_names = {0: "EMERG", 1: "ALERT", 2: "CRIT", 3: "ERROR", 
+                                    4: "WARN", 5: "NOTICE", 6: "INFO", 7: "DEBUG"}
+                    sev = severity_names.get(statustext.severity, "?")
+                    self.logger.warning(f"[{sev}] {text}")
+            
+            # Check heartbeat for armed status
+            heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=False)
+            if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+                self.is_armed = True
+                self.logger.info("✓ Vehicle armed (detected via heartbeat)")
+                return True
+            
+            time.sleep(0.1)
+        
+        if not ack_received:
+            self.logger.error("✗ No ACK received for arm command")
+        
+        return False
+
     def arm(self):
         """Arm the vehicle"""
         self.logger.info("Arming motors")
@@ -1578,7 +1643,7 @@ if __name__ == "__main__":
     if args.idle:
         time.sleep(args.duration)
     else:
-        if not c.arm_with_retry():
+        if not c.arm_verbose():
             c.logger.error("Failed to arm - checking why...")
             c.diagnose_arming_issues(duration=5)
             pass
