@@ -307,12 +307,7 @@ class Controller:
             # Check for STATUSTEXT explaining why
             statustext = self.master.recv_match(type='STATUSTEXT', blocking=False)
             if statustext:
-                text = statustext.text.strip()
-                if any(keyword in text.lower() for keyword in ['arm', 'reject', 'denied', 'prearm']):
-                    severity_names = {0: "EMERG", 1: "ALERT", 2: "CRIT", 3: "ERROR", 
-                                    4: "WARN", 5: "NOTICE", 6: "INFO", 7: "DEBUG"}
-                    sev = severity_names.get(statustext.severity, "?")
-                    self.logger.warning(f"[{sev}] {text}")
+                self.logger.info(statustext)
             
             # Check heartbeat for armed status
             heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=False)
@@ -1364,10 +1359,56 @@ class Controller:
             msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=0.5)
             
             if msg:
-                Serial.logger.info(msg)
-
+                text = msg.text.strip()
+                severity = msg.severity
+                
+                # Severity levels:
+                # 0=EMERGENCY, 1=ALERT, 2=CRITICAL, 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG
+                severity_names = {
+                    0: "EMERGENCY",
+                    1: "ALERT", 
+                    2: "CRITICAL",
+                    3: "ERROR",
+                    4: "WARNING",
+                    5: "NOTICE",
+                    6: "INFO",
+                    7: "DEBUG"
+                }
+                
+                sev_name = severity_names.get(severity, f"UNKNOWN({severity})")
+                
+                # Check if it's a pre-arm message
+                if any(keyword in text for keyword in ['PreArm', 'Arm:', 'Arming']):
+                    prearm_issues.append((severity, sev_name, text))
+                    if severity <= 4:  # Error or warning
+                        self.logger.error(f"[{sev_name}] {text}")
+                    else:
+                        self.logger.info(f"[{sev_name}] {text}")
+                else:
+                    other_messages.append((severity, sev_name, text))
+                    self.logger.debug(f"[{sev_name}] {text}")
         
-        return 0  # Return True if no errors
+        # Summary
+        self.logger.info("=" * 60)
+        self.logger.info("DIAGNOSIS SUMMARY")
+        self.logger.info("=" * 60)
+        
+        if prearm_issues:
+            self.logger.info(f"Found {len(prearm_issues)} pre-arm related messages:")
+            for sev, sev_name, text in prearm_issues:
+                self.logger.info(f"  [{sev_name}] {text}")
+        else:
+            self.logger.warning("No pre-arm messages received!")
+        
+        # Check SYS_STATUS
+        sys_status = self.master.recv_match(type='SYS_STATUS', blocking=True, timeout=2)
+        if sys_status:
+            self.logger.info("\nSensor Status:")
+            self._decode_sensor_health(sys_status)
+        
+        self.logger.info("=" * 60)
+        
+        return len([x for x in prearm_issues if x[0] <= 4]) == 0  # Return True if no errors
 
     def _decode_sensor_health(self, sys_status):
         """Decode and display sensor health flags"""
