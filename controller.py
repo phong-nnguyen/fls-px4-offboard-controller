@@ -389,7 +389,7 @@ class Controller:
             self.master.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
             0,
-            base_mode_id,
+            1,
             custom_mode_id,
             custom_submode_id,
             0, 0, 0, 0
