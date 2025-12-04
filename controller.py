@@ -244,9 +244,6 @@ class Controller:
                 1, 0, 0, 0, 0, 0, 0
             )
 
-            msg = self.master.recv_match(type="COMMAND_ACK", blocking=True)
-            self.logger.info(msg)
-
             # Wait for armed status
             start = time.time()
             while time.time() - start < 2:
@@ -882,16 +879,16 @@ class Controller:
                     self.send_position_target(point[0], point[1], point[2])
                     time.sleep(1 / 10)
     
-    def test_set_point(self, x=0, y=0, z=0):
+    def set_point_send(self, x=0, y=0, z=0):
         points = [(x, y, -self.takeoff_altitude - z)]
 
         for j in range(1):
             for point in points:
-                for i in range(int(self.flight_duration * 10)):
+                for i in range(int(self.flight_duration * 3)):
                     if self.failsafe:
                         return
                     self.send_position_target(point[0], point[1], point[2])
-                    time.sleep(1 / 10)
+                    time.sleep(1 / 3)
 
     def test_trajectory_2(self):
         waypoints = [
@@ -1420,7 +1417,7 @@ if __name__ == "__main__":
     c.set_initial_yaw()
     c.set_battery_cells()
 
-    set_point_thread = Thread(target=c.test_set_point)
+    set_point_thread = Thread(target=c.set_point_send)
     set_point_thread.start()
 
     time.sleep(5)
