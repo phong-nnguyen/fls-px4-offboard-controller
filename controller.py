@@ -387,7 +387,7 @@ class Controller:
             self.master.target_system,
             self.master.target_component,
             b'COM_RC_IN_MODE',  # Parameter name as bytes
-            2,                   # Value: 2 = RC not required
+            4,                   # Value: 2 = RC not required
             mavutil.mavlink.MAV_PARAM_TYPE_INT32
         )
 
