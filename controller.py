@@ -397,8 +397,8 @@ class Controller:
 
         ack = self.wait_for_command_ack(command=mavutil.mavlink.MAV_CMD_DO_SET_MODE)
         heartbeat = self.master.wait_heartbeat()
-        self.logger.debug(f"Custom Mode Flag {heartbeat.base_mode}")
-        self.logger.debug(f"heartbeat mode: {(heartbeat.custom_mode >> 16) & 0xFF}")
+        self.logger.debug(f"Heartbeat Base Mode Flag {heartbeat.base_mode}")
+        self.logger.debug(f"Heartbeat Custom mode: {(heartbeat.custom_mode >> 16) & 0xFF}")
         if ack and ((heartbeat.custom_mode >> 16) & 0xFF) == custom_mode_id:
             self.logger.info(f"Mode changed to {mode}")
             return True
@@ -887,11 +887,11 @@ class Controller:
 
         for j in range(1):
             for point in points:
-                for i in range(int(self.flight_duration * 3)):
+                for i in range(int(self.flight_duration * 10)):
                     if self.failsafe:
                         return
                     self.send_position_target(point[0], point[1], point[2])
-                    time.sleep(1 / 3)
+                    time.sleep(1 / 10)
 
     def test_trajectory_2(self):
         waypoints = [
@@ -1422,6 +1422,8 @@ if __name__ == "__main__":
 
     set_point_thread = Thread(target=c.test_set_point)
     set_point_thread.start()
+
+    time.sleep(5)
 
     if not c.set_mode('OFFBOARD'):
         pass
