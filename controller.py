@@ -263,94 +263,6 @@ class Controller:
         self.logger.error("Failed to arm after multiple attempts")
         return False
 
-
-    def param_change(self):
-        self.logger.info("Sending parameter changes")
-
-        disable_RC = "COM_RC_IN_MODE"
-
-        self.master.mav.param_set_send(
-            self.master.target_system, self.master.target_component,
-            disable_RC.encode('utf-8'),
-            4,
-            mavutil.mavlink.MAV_PARAM_TYPE_REAL32
-            
-        )
-
-        battery_disable = "CBRK_SUPPLY_CHK"
-
-        self.master.mav.param_set_send(
-            self.master.target_system, self.master.target_component,
-            battery_disable.encode('utf-8'),
-            894281,
-            mavutil.mavlink.MAV_PARAM_TYPE_REAL32
-        )
-
-        self.logger.info("Parameter changes sent")
-
-    def arm_verbose(self):
-        """Arm with detailed error reporting"""
-        self.logger.info("Attempting to arm...")
-
-        self.param_change()
-
-
-        # Send arm command
-        self.master.mav.command_long_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-            0,
-            1, 0, 0, 0, 0, 0, 0
-        )
-        
-        # Wait for both ACK and STATUSTEXT messages
-        start_time = time.time()
-        ack_received = False
-        
-        while time.time() - start_time < 5:
-            # Check for command acknowledgement
-            ack = self.master.recv_match(type='COMMAND_ACK', blocking=False)
-            if ack and ack.command == mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM:
-                ack_received = True
-                result_msgs = {
-                    0: "ACCEPTED",
-                    1: "TEMPORARILY_REJECTED", 
-                    2: "DENIED",
-                    3: "UNSUPPORTED",
-                    4: "FAILED",
-                    5: "IN_PROGRESS",
-                    6: "CANCELLED"
-                }
-                result_name = result_msgs.get(ack.result, f"UNKNOWN({ack.result})")
-                self.logger.info(f"Arm command result: {result_name}")
-                
-                if ack.result == 0:  # ACCEPTED
-                    self.is_armed = True
-                    self.logger.info("✓ Vehicle armed successfully")
-                    return True
-                else:
-                    self.logger.error(f"✗ Arm command rejected: {result_name}")
-            
-                # Check for STATUSTEXT explaining why
-                statustext = self.master.recv_match(type='SYS_STATUS', blocking=True)
-                if statustext:
-                    self.logger.info(statustext)
-            
-            # Check heartbeat for armed status
-            heartbeat = self.master.recv_match(type='HEARTBEAT', blocking=False)
-            if heartbeat and heartbeat.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
-                self.is_armed = True
-                self.logger.info("✓ Vehicle armed (detected via heartbeat)")
-                return True
-            
-            time.sleep(0.1)
-        
-        if not ack_received:
-            self.logger.error("✗ No ACK received for arm command")
-        
-        return False
-
     def arm(self):
         """Arm the vehicle"""
         self.logger.info("Arming motors")
@@ -1351,145 +1263,6 @@ class Controller:
             mocap_wrapper.close()
             # vicon_thread.stop()
 
-    def diagnose_arming_issues(self, duration=10):
-        """
-        Listen for all STATUSTEXT messages and categorize arming issues.
-        This helps diagnose what's preventing arming.
-        """
-        self.logger.info("=" * 60)
-        self.logger.info("DIAGNOSING ARMING ISSUES")
-        self.logger.info("=" * 60)
-        
-        # Request extended status stream
-        self.master.mav.request_data_stream_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_DATA_STREAM_EXTENDED_STATUS,
-            4,  # 4 Hz
-            1
-        )
-        
-        # Try to arm to trigger pre-arm messages
-        self.logger.info("Attempting to arm to trigger pre-arm checks...")
-        self.master.mav.command_long_send(
-            self.master.target_system,
-            self.master.target_component,
-            mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
-            0,
-            1, 0, 0, 0, 0, 0, 0
-        )
-        
-        prearm_issues = []
-        other_messages = []
-        start_time = time.time()
-        
-        while time.time() - start_time < duration:
-            msg = self.master.recv_match(type='STATUSTEXT', blocking=True, timeout=0.5)
-            
-            if msg:
-                text = msg.text.strip()
-                severity = msg.severity
-                
-                # Severity levels:
-                # 0=EMERGENCY, 1=ALERT, 2=CRITICAL, 3=ERROR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG
-                severity_names = {
-                    0: "EMERGENCY",
-                    1: "ALERT", 
-                    2: "CRITICAL",
-                    3: "ERROR",
-                    4: "WARNING",
-                    5: "NOTICE",
-                    6: "INFO",
-                    7: "DEBUG"
-                }
-                
-                sev_name = severity_names.get(severity, f"UNKNOWN({severity})")
-                
-                # Check if it's a pre-arm message
-                if any(keyword in text for keyword in ['PreArm', 'Arm:', 'Arming']):
-                    prearm_issues.append((severity, sev_name, text))
-                    if severity <= 4:  # Error or warning
-                        self.logger.error(f"[{sev_name}] {text}")
-                    else:
-                        self.logger.info(f"[{sev_name}] {text}")
-                else:
-                    other_messages.append((severity, sev_name, text))
-                    self.logger.debug(f"[{sev_name}] {text}")
-        
-        # Summary
-        self.logger.info("=" * 60)
-        self.logger.info("DIAGNOSIS SUMMARY")
-        self.logger.info("=" * 60)
-        
-        if prearm_issues:
-            self.logger.info(f"Found {len(prearm_issues)} pre-arm related messages:")
-            for sev, sev_name, text in prearm_issues:
-                self.logger.info(f"  [{sev_name}] {text}")
-        else:
-            self.logger.warning("No pre-arm messages received!")
-        
-        # Check SYS_STATUS
-        sys_status = self.master.recv_match(type='SYS_STATUS', blocking=True, timeout=2)
-        if sys_status:
-            self.logger.info("\nSensor Status:")
-            self._decode_sensor_health(sys_status)
-        
-        self.logger.info("=" * 60)
-        
-        return len([x for x in prearm_issues if x[0] <= 4]) == 0  # Return True if no errors
-
-    def _decode_sensor_health(self, sys_status):
-        """Decode and display sensor health flags"""
-        
-        # Sensor bit definitions from MAV_SYS_STATUS_SENSOR
-        sensors = {
-            0: "3D_GYRO",
-            1: "3D_ACCEL", 
-            2: "3D_MAG",
-            3: "ABSOLUTE_PRESSURE",
-            4: "DIFFERENTIAL_PRESSURE",
-            5: "GPS",
-            6: "OPTICAL_FLOW",
-            7: "VISION_POSITION",
-            8: "LASER_POSITION",
-            9: "EXTERNAL_GROUND_TRUTH",
-            10: "ANGULAR_RATE_CONTROL",
-            11: "ATTITUDE_STABILIZATION",
-            12: "YAW_POSITION",
-            13: "Z_ALTITUDE_CONTROL",
-            14: "XY_POSITION_CONTROL",
-            15: "MOTOR_OUTPUTS",
-            16: "RC_RECEIVER",
-            17: "3D_GYRO2",
-            18: "3D_ACCEL2",
-            19: "3D_MAG2",
-            20: "GEOFENCE",
-            21: "AHRS",
-            22: "TERRAIN",
-            23: "REVERSE_MOTOR",
-            24: "LOGGING",
-            25: "BATTERY",
-            26: "PROXIMITY",
-            27: "SATCOM",
-            28: "PREARM_CHECK",
-            29: "OBSTACLE_AVOIDANCE",
-            30: "PROPULSION"
-        }
-        
-        enabled = sys_status.onboard_control_sensors_enabled
-        health = sys_status.onboard_control_sensors_health
-        present = sys_status.onboard_control_sensors_present
-        
-        for bit, name in sensors.items():
-            mask = 1 << bit
-            is_present = bool(present & mask)
-            is_enabled = bool(enabled & mask)
-            is_healthy = bool(health & mask)
-            
-            if is_enabled:  # Only show enabled sensors
-                status = "✓ OK" if is_healthy else "✗ FAIL"
-                self.logger.info(f"  {name:25s}: {status}")
-
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
@@ -1505,7 +1278,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--vicon", action="store_true", help="localize using Vicon and save tracking data")
     arg_parser.add_argument("--vicon-rate", type=float, default="100.0", help="vicon refresh rate in Hz")
     arg_parser.add_argument("--fake-vicon", action="store_true", help="send fake vicon data to the drone, never fly with this option")
-    arg_parser.add_argument("--rigid-body-name", type=str, default="fls_ap_y",
+    arg_parser.add_argument("--rigid-body-name", type=str, default="fls_px4",
                             help="the name of the rigid body that represents the FLS in mocap tracking system, works with --vicon.")
     arg_parser.add_argument("--save-vicon", action="store_true", help="save Vicon tracking data only")
     arg_parser.add_argument("--save-camera", action="store_true",
@@ -1666,9 +1439,7 @@ if __name__ == "__main__":
     if args.idle:
         time.sleep(args.duration)
     else:
-        if not c.arm_verbose():
-            c.logger.error("Failed to arm - checking why...")
-            c.diagnose_arming_issues(duration=5)
+        if not c.arm_with_retry():
             pass
             # exit()
         c.start_flight()
