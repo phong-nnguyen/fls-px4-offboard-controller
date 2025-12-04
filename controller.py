@@ -1275,7 +1275,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--vicon", action="store_true", help="localize using Vicon and save tracking data")
     arg_parser.add_argument("--vicon-rate", type=float, default="100.0", help="vicon refresh rate in Hz")
     arg_parser.add_argument("--fake-vicon", action="store_true", help="send fake vicon data to the drone, never fly with this option")
-    arg_parser.add_argument("--rigid-body-name", type=str, default="fls_px4",
+    arg_parser.add_argument("--rigid-body-name", type=str, default="fls_px4_y",
                             help="the name of the rigid body that represents the FLS in mocap tracking system, works with --vicon.")
     arg_parser.add_argument("--save-vicon", action="store_true", help="save Vicon tracking data only")
     arg_parser.add_argument("--save-camera", action="store_true",

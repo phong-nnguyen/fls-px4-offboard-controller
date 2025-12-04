@@ -65,6 +65,6 @@ if __name__ == "__main__":
     ap.add_argument("-t", default=140, type=int, help="duration")
     args = ap.parse_args()
 
-    mw = MocapWrapper("fls_px4")
+    mw = MocapWrapper("fls_px4_y")
     time.sleep(args.t)
     mw.close()
