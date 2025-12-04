@@ -241,7 +241,7 @@ class Controller:
                 self.master.target_component,
                 mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM,
                 0,
-                1, 21196, 0, 0, 0, 0, 0
+                1, 0, 0, 0, 0, 0, 0
             )
 
             msg = self.master.recv_match(type="COMMAND_ACK", blocking=True)
@@ -379,24 +379,9 @@ class Controller:
         base_mode_id = modes[mode][0]
         custom_mode_id = modes[mode][1]
         custom_submode_id = modes[mode][2]
-        self.logger.debug(f"Base Mode: {base_mode_id}")
-        self.logger.debug(f"Custom Mode: {custom_mode_id}")
-        self.logger.debug(f"Custom submode: {custom_submode_id}")
-
-        self.master.mav.param_set_send(
-            self.master.target_system,
-            self.master.target_component,
-            b'COM_RC_IN_MODE',  # Parameter name as bytes
-            4,                   # Value: 2 = RC not required
-            mavutil.mavlink.MAV_PARAM_TYPE_INT32
-        )
-
-        # Wait for acknowledgment
-        message = self.master.recv_match(type='PARAM_VALUE', blocking=True, timeout=3)
-        if message:
-            self.logger.info(f"Parameter set: {message.param_id} = {message.param_value}")
-        else:
-            self.logger.info("No acknowledgment received")
+        # self.logger.debug(f"Base Mode: {base_mode_id}")
+        # self.logger.debug(f"Custom Mode: {custom_mode_id}")
+        # self.logger.debug(f"Custom submode: {custom_submode_id}")
 
         # Send mode change command
         self.master.mav.command_long_send(
@@ -404,9 +389,9 @@ class Controller:
             self.master.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
             0,
-            29,
-            6,
-            1,
+            base_mode_id,
+            custom_mode_id,
+            custom_submode_id,
             0, 0, 0, 0
         )
 
