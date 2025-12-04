@@ -389,9 +389,9 @@ class Controller:
             self.master.target_component,
             mavutil.mavlink.MAV_CMD_DO_SET_MODE,
             0,
-            209,
+            29,
             6,
-            1,
+            0,
             0, 0, 0, 0
         )
 
