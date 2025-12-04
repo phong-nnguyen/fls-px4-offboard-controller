@@ -383,6 +383,21 @@ class Controller:
         self.logger.debug(f"Custom Mode: {custom_mode_id}")
         self.logger.debug(f"Custom submode: {custom_submode_id}")
 
+        self.master.mav.param_set_send(
+            self.master.target_system,
+            self.master.target_component,
+            b'COM_RC_IN_MODE',  # Parameter name as bytes
+            2,                   # Value: 2 = RC not required
+            mavutil.mavlink.MAV_PARAM_TYPE_INT32
+        )
+
+        # Wait for acknowledgment
+        message = self.master.recv_match(type='PARAM_VALUE', blocking=True, timeout=3)
+        if message:
+            self.logger.info(f"Parameter set: {message.param_id} = {message.param_value}")
+        else:
+            self.logger.info("No acknowledgment received")
+
         # Send mode change command
         self.master.mav.command_long_send(
             self.master.target_system,
