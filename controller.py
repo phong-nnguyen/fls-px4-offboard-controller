@@ -1151,8 +1151,8 @@ class Controller:
     def start_flight(self):
         battery_thread = Thread(target=self.watch_battery, daemon=True)
         time.sleep(3)
-        c.takeoff()
-        time.sleep(2)
+        #c.takeoff()
+        #time.sleep(2)
 
         if args.simple_takeoff:
             flight_thread = Thread(target=self.simple_takeoff)
