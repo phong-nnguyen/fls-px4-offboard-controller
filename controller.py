@@ -1052,7 +1052,10 @@ class Controller:
             vx, vy, vz,  # linear velocity
             0.0, 0.0, 0.0,  # angular velocity: vroll, vpitch, vyaw
             pose_covariance,  # pose covariance
-            velocity_covariance  # velocity covariance
+            velocity_covariance,  # velocity covariance
+            0,
+            mavutil.mavlink.MAV_ESTIMATOR_TYPE_VISION,
+            100
         )
 
     def send_distance_sensor(self, distance_cm):
@@ -1116,8 +1119,8 @@ class Controller:
         # st = time.time()
         vx, vy, vz = self.velocity_estimator.update(x, y, z, timestamp=timestamp)
         # t1 = time.time()
-        self.send_position_estimate(y, x, -z)
-        #self.send_vision_odometry(y, x, -z, vy, vx, -vz, timestamp=timestamp)
+        #self.send_position_estimate(y, x, -z)
+        self.send_vision_odometry(y, x, -z, vy, vx, -vz, timestamp=timestamp)
         # t2 = time.time()
         # self.send_distance_sensor(z * 10)
         # t3 = time.time()
