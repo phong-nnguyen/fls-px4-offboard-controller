@@ -1120,6 +1120,8 @@ class Controller:
         vx, vy, vz = self.velocity_estimator.update(x, y, z, timestamp=timestamp)
         # t1 = time.time()
         #self.send_position_estimate(y, x, -z)
+        self.logger.info(dir(self.master.mav))
+        self.logger.info(hasattr(self.master.mav, 'odometry_send'))
         self.send_vision_odometry(y, x, -z, vy, vx, -vz, timestamp=timestamp)
         # t2 = time.time()
         # self.send_distance_sensor(z * 10)
