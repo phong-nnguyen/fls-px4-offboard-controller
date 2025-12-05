@@ -11,6 +11,7 @@ from threading import Thread
 
 import numpy as np
 from pymavlink import mavutil
+from pymavlink.dialects.v20 import ardupilotmega as mavlink2
 
 from log import LoggerFactory
 from velocity_estimator import VelocityEstimator
@@ -1043,7 +1044,7 @@ class Controller:
         if timestamp is None:
             timestamp = time.time()
 
-        self.master.mav.odometry_send(
+        msg = mavlink2.MAVLink_odometry_message(
             int(timestamp * 1e6),  # timestamp
             mavutil.mavlink.MAV_FRAME_LOCAL_FRD,  # frame_id
             mavutil.mavlink.MAV_FRAME_BODY_FRD,  # child_frame_id
@@ -1057,6 +1058,8 @@ class Controller:
             mavutil.mavlink.MAV_ESTIMATOR_TYPE_VISION,
             100
         )
+
+        self.master.mav.send(msg)
 
     def send_distance_sensor(self, distance_cm):
         self.master.mav.distance_sensor_send(
