@@ -1155,36 +1155,39 @@ class Controller:
         input("press enter to land")
 
     def start_flight(self):
-        battery_thread = Thread(target=self.watch_battery, daemon=True)
-        time.sleep(3)
-        #c.takeoff()
-        #time.sleep(2)
+        try:
+            battery_thread = Thread(target=self.watch_battery, daemon=True)
+            time.sleep(3)
+            #c.takeoff()
+            #time.sleep(2)
 
-        if args.simple_takeoff:
-            flight_thread = Thread(target=self.simple_takeoff)
-        elif args.fig8:
-            flight_thread = Thread(target=self.fly_figure_eight)
-        elif args.trajectory:
-            time.sleep(2)
-            flight_thread = Thread(target=self.send_trajectory_from_file, args=(args.trajectory,))
-        elif args.autotune:
-            flight_thread = Thread(target=self.autotune)
-        elif args.tune_pos:
-            flight_thread = Thread(target=self.test_trajectory_3)
-        elif args.tune_att:
-            flight_thread = Thread(target=self.test_trajectory_4)
-            # flight_thread = Thread(target=self.start_mission)
-            # flight_thread = Thread(target=self.test_trajectory, args=(0, 0, 0))
-            # flight_thread = Thread(target=self.test_s_trajectory)
-            # flight_thread = Thread(target=self.circular_trajectory)
+            if args.simple_takeoff:
+                flight_thread = Thread(target=self.simple_takeoff)
+            elif args.fig8:
+                flight_thread = Thread(target=self.fly_figure_eight)
+            elif args.trajectory:
+                time.sleep(2)
+                flight_thread = Thread(target=self.send_trajectory_from_file, args=(args.trajectory,))
+            elif args.autotune:
+                flight_thread = Thread(target=self.autotune)
+            elif args.tune_pos:
+                flight_thread = Thread(target=self.test_trajectory_3)
+            elif args.tune_att:
+                flight_thread = Thread(target=self.test_trajectory_4)
+                # flight_thread = Thread(target=self.start_mission)
+                # flight_thread = Thread(target=self.test_trajectory, args=(0, 0, 0))
+                # flight_thread = Thread(target=self.test_s_trajectory)
+                # flight_thread = Thread(target=self.circular_trajectory)
 
-        self.running_battery_watcher = True
-        battery_thread.start()
-        flight_thread.start()
+            self.running_battery_watcher = True
+            battery_thread.start()
+            flight_thread.start()
 
-        flight_thread.join()
-        self.running_battery_watcher = False
-        battery_thread.join()
+            flight_thread.join()
+            self.running_battery_watcher = False
+            battery_thread.join()
+        except KeyboardInterrupt:
+            return
 
     def wait_param(self, name, timeout=5):
         """Fetch a parameter and return its value."""
