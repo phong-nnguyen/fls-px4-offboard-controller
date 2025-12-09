@@ -925,20 +925,20 @@ class Controller:
             time.sleep(1 / 10)
 
         for pos in waypoints:
-            for i in range(10):
+            for i in range(20):
                 if self.failsafe:
                     return
                 self.send_position_target(*pos)
                 time.sleep(1 / 10)
 
-        for i in range(20):
+        for i in range(40):
             if self.failsafe:
                 return
             self.send_position_target(*waypoints_2[0])
             time.sleep(1 / 10)
 
         for pos in waypoints_2:
-            for i in range(10):
+            for i in range(20):
                 if self.failsafe:
                     return
                 self.send_position_target(*pos)
