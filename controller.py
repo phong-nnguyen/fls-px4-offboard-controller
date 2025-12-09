@@ -171,6 +171,7 @@ class Controller:
         self.battery_cells = message.param_value
         if self.battery_cells > 0:
             self.voltage_threshold = MIN_CELL_VOLT * self.battery_cells
+            self.logger.info(f"Battery Voltage Set Threshold: {self.voltage_threshold}")
 
     def reboot(self):
         self.master.mav.command_long_send(
