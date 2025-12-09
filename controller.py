@@ -450,7 +450,7 @@ class Controller:
 
                 if isinstance(voltage, float) and voltage < self.voltage_threshold:
                     self.failsafe = True
-                    self.logger.info(f"Threshold is: {voltage_threshold}")
+                    self.logger.info(f"Threshold is: {self.voltage_threshold}")
                     self.logger.warning(f"Failsafe triggered due to low battery ({voltage:.2f} V)")
                     break
 
